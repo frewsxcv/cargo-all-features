@@ -19,30 +19,14 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     let feature_sets = fetch_feature_sets(package);
 
     for feature_set in feature_sets {
-        let mut command = process::Command::new(cargo_cmd());
-        command.arg("test");
-        command.arg("--no-default-features");
-
-        let mut cli_txt = "cargo test --no-default-features".to_string();
+        let mut cargo_test_runner = CargoTestRunner::new();
 
         if !feature_set.is_empty() {
-            let joined_feature_set = feature_set.join(",");
-
-            command.arg("--features");
-            command.arg(&joined_feature_set);
-
-            cli_txt.push_str(&format!(" --features {}", joined_feature_set));
+            cargo_test_runner.arg("--features");
+            cargo_test_runner.arg(&feature_set.join(","));
         }
 
-        println!("running: {}", cli_txt);
-
-        let output = command.stderr(process::Stdio::inherit()).output().unwrap(); // fixme
-
-        if !output.status.success() {
-            panic!("todo"); // fixme
-        }
-
-        // dbg!(command);
+        cargo_test_runner.run();
     }
 
     Ok(())
@@ -62,6 +46,42 @@ fn fetch_feature_sets(package: &cargo_metadata::Package) -> Vec<Vec<String>> {
     }
 
     feature_sets
+}
+
+struct CargoTestRunner {
+    command: process::Command,
+    command_string: String,
+}
+
+impl CargoTestRunner {
+    fn new() -> Self {
+        let cmd = cargo_cmd();
+
+        let command = process::Command::new(&cmd);
+        let command_string = cmd.to_str().unwrap().to_owned();
+
+        let mut s = CargoTestRunner { command, command_string };
+        s.arg("test");
+        s.arg("--no-default-features");
+
+        s
+    }
+
+    fn arg(&mut self, arg: &str) {
+        self.command.arg(arg);
+        self.command_string.push_str(" ");
+        self.command_string.push_str(arg);
+    }
+
+    fn run(&mut self) {
+        let output = self.command.stderr(process::Stdio::inherit()).output().unwrap(); // fixme
+        println!("running: {}", self.command_string);
+
+        if !output.status.success() {
+            panic!("todo"); // fixme
+        }
+
+    }
 }
 
 fn fetch_optional_dependencies(package: &cargo_metadata::Package) -> Vec<String> {
