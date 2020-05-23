@@ -1,0 +1,16 @@
+[package]
+name = "cargo-test-all-features"
+version = "0.1.0"
+authors = ["Corey Farwell <coreyf@rwell.org>"]
+edition = "2018"
+
+[dependencies]
+cargo_metadata = "0.9"
+serde_json = "*"
+itertools = "*"
+
+bar = { version = "*", optional = true } # FIXME
+geo-types = { version = "*", optional = true } # FIXME
+
+[features]
+foo = [] # FIXME
