@@ -20,15 +20,21 @@ fn main() -> Result<(), Box<dyn error::Error>> {
 
     for feature_set in feature_sets {
         let mut command = process::Command::new(cargo_cmd());
-
         command.arg("test");
+        command.arg("--no-default-features");
 
-        for feature in &feature_set {
+        let mut cli_txt = "cargo test --no-default-features".to_string();
+
+        if !feature_set.is_empty() {
+            let joined_feature_set = feature_set.join(",");
+
             command.arg("--features");
-            command.arg(feature);
+            command.arg(&joined_feature_set);
+
+            cli_txt.push_str(&format!(" --features {}", joined_feature_set));
         }
 
-        println!("running: cargo test features={:?}", &feature_set);
+        println!("running: {}", cli_txt);
 
         let output = command.stderr(process::Stdio::inherit()).output().unwrap(); // fixme
 
@@ -68,7 +74,7 @@ fn fetch_optional_dependencies(package: &cargo_metadata::Package) -> Vec<String>
 }
 
 fn fetch_features(package: &cargo_metadata::Package) -> Vec<String> {
-    package.features.keys().cloned().collect()
+    package.features.keys().filter(|key| key != &"default").cloned().collect()
 }
 
 fn fetch_cargo_metadata() -> Result<cargo_metadata::Metadata, Box<dyn error::Error>> {
