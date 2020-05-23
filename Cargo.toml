@@ -8,9 +8,3 @@ edition = "2018"
 cargo_metadata = "0.9"
 serde_json = "1"
 itertools = "0.9"
-
-bar = { version = "*", optional = true } # FIXME
-geo-types = { version = "*", optional = true } # FIXME
-
-[features]
-foo = [] # FIXME
