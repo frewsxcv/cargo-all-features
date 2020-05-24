@@ -55,10 +55,8 @@ struct CargoTestRunner {
 
 impl CargoTestRunner {
     fn new() -> Self {
-        let cmd = cargo_cmd();
-
-        let command = process::Command::new(&cmd);
-        let command_string = cmd.to_str().unwrap().to_owned();
+        let command = process::Command::new(&cargo_cmd());
+        let command_string = "cargo".to_string();
 
         let mut s = CargoTestRunner { command, command_string };
         s.arg("test");
@@ -75,7 +73,7 @@ impl CargoTestRunner {
 
     fn run(&mut self) {
         let output = self.command.stderr(process::Stdio::inherit()).output().unwrap(); // fixme
-        println!("running: {}", self.command_string);
+        println!("     Testing {}", self.command_string);
 
         if !output.status.success() {
             panic!("todo"); // fixme
