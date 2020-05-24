@@ -72,8 +72,8 @@ impl CargoTestRunner {
     }
 
     fn run(&mut self) {
-        let output = self.command.stderr(process::Stdio::inherit()).output().unwrap(); // fixme
         println!("     Testing {}", self.command_string);
+        let output = self.command.stderr(process::Stdio::inherit()).output().unwrap(); // fixme
 
         if !output.status.success() {
             panic!("todo"); // fixme
