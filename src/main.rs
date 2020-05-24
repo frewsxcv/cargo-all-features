@@ -4,16 +4,16 @@ use std::{env, error, ffi, process};
 fn main() -> Result<(), Box<dyn error::Error>> {
     let metadata = fetch_cargo_metadata()?;
 
-    if metadata.workspace_members.len() > 1 {
-        panic!("workspaces aren't supported"); // fixme
-    }
+    // if env::current_dir()? == metadata.workspace_root {
+    //     panic!("in the workspace root");
+    // }
 
-    let package_id = metadata.workspace_members[0].clone();
+    let current_dir = env::current_dir()?;
 
     let package = metadata
         .packages
         .iter()
-        .find(|package| package.id == package_id)
+        .find(|package| package.manifest_path.parent() == Some(&current_dir))
         .unwrap();
 
     let feature_sets = fetch_feature_sets(package);
