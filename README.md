@@ -12,6 +12,14 @@ cargo install cargo-test-all-features
 
 ## Usage
 
+Build crate with all feature flag combinations:
+
+```
+cargo build-all-features <CARGO BUILD FLAGS>
+```
+
+Teset crate with all feature flag combinations:
+
 ```
 cargo test-all-features <CARGO TEST FLAGS>
 ```

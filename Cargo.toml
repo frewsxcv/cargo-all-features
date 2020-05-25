@@ -4,8 +4,16 @@ version = "1.0.1"
 authors = ["Corey Farwell <coreyf@rwell.org>"]
 edition = "2018"
 description = "A Cargo subcommand to test all feature flag combinations"
-repository = "https://github.com/frewsxcv/cargoo-test-all-features"
+repository = "https://github.com/frewsxcv/cargo-test-all-features"
 license = "MIT/Apache-2.0"
+
+[[bin]]
+name = "cargo-build-all-features"
+path = "src/bin/cargo-build-all-features.rs"
+
+[[bin]]
+name = "cargo-test-all-features"
+path = "src/bin/cargo-test-all-features.rs"
 
 [dependencies]
 cargo_metadata = "0.9"

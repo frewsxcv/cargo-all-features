@@ -1,29 +1,17 @@
 use std::{env, error, ffi, process};
 
-mod features_finder;
-mod test_runner;
+pub mod features_finder;
+pub mod test_runner;
 
-fn main() -> Result<(), Box<dyn error::Error>> {
-    let packages = determine_packages_to_test()?;
-
-    for package in packages {
-        let outcome = test_all_features_for_package(&package)?;
-
-        if let TestOutcome::Fail(exit_status) = outcome {
-            process::exit(exit_status.code().unwrap());
-        }
-    }
-
-    Ok(())
-}
-
-fn test_all_features_for_package(
+pub fn test_all_features_for_package(
     package: &cargo_metadata::Package,
+    command: crate::test_runner::CargoCommand,
 ) -> Result<TestOutcome, Box<dyn error::Error>> {
-    let feature_sets = features_finder::fetch_feature_sets(package);
+    let feature_sets = crate::features_finder::fetch_feature_sets(package);
 
     for feature_set in feature_sets {
-        let mut test_runner = test_runner::TestRunner::new(
+        let mut test_runner = crate::test_runner::TestRunner::new(
+            command,
             package.name.clone(),
             feature_set.clone(),
             package
@@ -36,15 +24,16 @@ fn test_all_features_for_package(
         let outcome = test_runner.run()?;
 
         match outcome {
-            t @ TestOutcome::Fail(_) => return Ok(t),
             TestOutcome::Pass => (),
+            // Fail fast if we encounter a test failure
+            t @ TestOutcome::Fail(_) => return Ok(t),
         }
     }
 
     Ok(TestOutcome::Pass)
 }
 
-fn determine_packages_to_test() -> Result<Vec<cargo_metadata::Package>, Box<dyn error::Error>> {
+pub fn determine_packages_to_test() -> Result<Vec<cargo_metadata::Package>, Box<dyn error::Error>> {
     let current_dir = env::current_dir()?;
     let metadata = fetch_cargo_metadata()?;
 
@@ -85,7 +74,7 @@ fn fetch_cargo_metadata_json() -> Result<String, Box<dyn error::Error>> {
     Ok(String::from_utf8(output.stdout)?)
 }
 
-fn cargo_cmd() -> ffi::OsString {
+pub fn cargo_cmd() -> ffi::OsString {
     env::var_os("CARGO").unwrap_or_else(|| ffi::OsString::from("cargo"))
 }
 

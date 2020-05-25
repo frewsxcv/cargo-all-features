@@ -9,10 +9,18 @@ pub struct TestRunner {
 }
 
 impl TestRunner {
-    pub fn new(crate_name: String, feature_set: Vec<String>, working_dir: path::PathBuf) -> Self {
+    pub fn new(
+        cargo_command: CargoCommand,
+        crate_name: String,
+        feature_set: Vec<String>,
+        working_dir: path::PathBuf,
+    ) -> Self {
         let mut command = process::Command::new(&crate::cargo_cmd());
 
-        command.arg("test");
+        command.arg(match cargo_command {
+            CargoCommand::Build => "build",
+            CargoCommand::Test => "test",
+        });
         command.arg("--no-default-features");
 
         if !feature_set.is_empty() {
@@ -63,4 +71,10 @@ impl TestRunner {
             crate::TestOutcome::Fail(output.status)
         })
     }
+}
+
+#[derive(Copy, Clone)]
+pub enum CargoCommand {
+    Build,
+    Test,
 }
