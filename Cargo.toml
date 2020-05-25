@@ -17,7 +17,6 @@ name = "cargo-test-all-features"
 path = "src/bin/cargo-test-all-features.rs"
 
 [dependencies]
-cargo_metadata = "0.9"
-serde_json = "1"
+json = "0.12"
 itertools = "0.9"
 termcolor = "1"

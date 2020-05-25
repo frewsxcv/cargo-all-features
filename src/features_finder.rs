@@ -1,6 +1,6 @@
 use itertools::Itertools;
 
-pub fn fetch_feature_sets(package: &cargo_metadata::Package) -> Vec<Vec<String>> {
+pub fn fetch_feature_sets(package: &crate::cargo_metadata::Package) -> Vec<Vec<String>> {
     let mut features = vec![];
     features.append(&mut fetch_optional_dependencies(&package));
     features.append(&mut fetch_features(&package));
@@ -16,7 +16,7 @@ pub fn fetch_feature_sets(package: &cargo_metadata::Package) -> Vec<Vec<String>>
     feature_sets
 }
 
-fn fetch_optional_dependencies(package: &cargo_metadata::Package) -> Vec<String> {
+fn fetch_optional_dependencies(package: &crate::cargo_metadata::Package) -> Vec<String> {
     package
         .dependencies
         .iter()
@@ -25,10 +25,10 @@ fn fetch_optional_dependencies(package: &cargo_metadata::Package) -> Vec<String>
         .collect()
 }
 
-fn fetch_features(package: &cargo_metadata::Package) -> Vec<String> {
+fn fetch_features(package: &crate::cargo_metadata::Package) -> Vec<String> {
     package
         .features
-        .keys()
+        .iter()
         .filter(|key| key != &"default")
         .cloned()
         .collect()

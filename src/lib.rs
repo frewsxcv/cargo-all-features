@@ -1,5 +1,6 @@
 use std::{env, error, ffi, process};
 
+pub mod cargo_metadata;
 pub mod features_finder;
 pub mod test_runner;
 
@@ -7,10 +8,7 @@ pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error
     let packages = determine_packages_to_test()?;
 
     for package in packages {
-        let outcome = test_all_features_for_package(
-            &package,
-            cargo_command,
-        )?;
+        let outcome = test_all_features_for_package(&package, cargo_command)?;
 
         if let TestOutcome::Fail(exit_status) = outcome {
             process::exit(exit_status.code().unwrap());
@@ -52,7 +50,7 @@ fn test_all_features_for_package(
 
 fn determine_packages_to_test() -> Result<Vec<cargo_metadata::Package>, Box<dyn error::Error>> {
     let current_dir = env::current_dir()?;
-    let metadata = fetch_cargo_metadata()?;
+    let metadata = cargo_metadata::fetch()?;
 
     Ok(if current_dir == metadata.workspace_root {
         metadata
@@ -69,26 +67,6 @@ fn determine_packages_to_test() -> Result<Vec<cargo_metadata::Package>, Box<dyn 
             .expect("Could not find cargo package in metadata")
             .to_owned()]
     })
-}
-
-fn fetch_cargo_metadata() -> Result<cargo_metadata::Metadata, Box<dyn error::Error>> {
-    let json = fetch_cargo_metadata_json()?;
-
-    Ok(serde_json::from_str(&json)?)
-}
-
-fn fetch_cargo_metadata_json() -> Result<String, Box<dyn error::Error>> {
-    let mut command = process::Command::new(cargo_cmd());
-
-    command.arg("metadata").arg("--format-version").arg("1");
-
-    let output = command.stderr(process::Stdio::inherit()).output()?;
-
-    if !output.status.success() {
-        return Err("`cargo metadata` returned a non-zero status".into());
-    }
-
-    Ok(String::from_utf8(output.stdout)?)
 }
 
 fn cargo_cmd() -> ffi::OsString {
