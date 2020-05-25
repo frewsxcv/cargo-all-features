@@ -20,7 +20,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             .packages
             .iter()
             .find(|package| package.manifest_path.parent() == Some(&current_dir))
-            .unwrap()
+            .expect("Could not find cargo package in metadata")
             .to_owned()]
     };
 
@@ -38,7 +38,11 @@ fn run_all_feature_tests_for_package(package: &cargo_metadata::Package) {
         let mut cargo_test_runner = cargo_test_runner::CargoTestRunner::new(
             package.name.clone(),
             feature_set.clone(),
-            package.manifest_path.parent().unwrap().to_owned(),
+            package
+                .manifest_path
+                .parent()
+                .expect("could not find parent of cargo manifest path")
+                .to_owned(),
         );
 
         if !feature_set.is_empty() {
@@ -95,7 +99,7 @@ fn fetch_cargo_metadata_json() -> Result<String, Box<dyn error::Error>> {
 
     command.arg("metadata").arg("--format-version").arg("1");
 
-    let output = command.stderr(process::Stdio::inherit()).output().unwrap(); // fixme
+    let output = command.stderr(process::Stdio::inherit()).output()?;
 
     if !output.status.success() {
         return Err("`cargo metadata` returned a non-zero status".into());
