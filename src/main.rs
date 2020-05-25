@@ -98,7 +98,7 @@ fn fetch_cargo_metadata_json() -> Result<String, Box<dyn error::Error>> {
     let output = command.stderr(process::Stdio::inherit()).output().unwrap(); // fixme
 
     if !output.status.success() {
-        panic!("todo"); // fixme
+        return Err("`cargo metadata` returned a non-zero status".into());
     }
 
     Ok(String::from_utf8(output.stdout)?)
