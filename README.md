@@ -1,10 +1,8 @@
 # cargo-all-features
 
-A [Cargo] subcommand to build and test all feature flag combinations.
+Cargo subcommands that build and test all feature flag combinations for a crate.
 
 <img src=https://i.imgur.com/OVBRtEC.png width=500>
-
-[Cargo]: https://doc.rust-lang.org/cargo/
 
 ## Install
 
