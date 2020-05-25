@@ -1,13 +1,15 @@
-# cargo-test-all-features
+# cargo-all-features
 
-A [Cargo] subcommand to test all feature flag combinations.
+A [Cargo] subcommand to build and test all feature flag combinations.
 
 <img src=https://i.imgur.com/OVBRtEC.png width=500>
+
+[Cargo]: https://doc.rust-lang.org/cargo/
 
 ## Install
 
 ```
-cargo install cargo-test-all-features
+cargo install cargo-all-features
 ```
 
 ## Usage
@@ -18,13 +20,11 @@ Build crate with all feature flag combinations:
 cargo build-all-features <CARGO BUILD FLAGS>
 ```
 
-Teset crate with all feature flag combinations:
+Test crate with all feature flag combinations:
 
 ```
 cargo test-all-features <CARGO TEST FLAGS>
 ```
-
-[Cargo]: https://doc.rust-lang.org/cargo/
 
 ## Why?
 
