@@ -3,15 +3,17 @@ use termcolor::WriteColor;
 
 pub struct CargoTestRunner {
     command: process::Command,
+    crate_name: String,
     feature_set: Vec<String>,
     working_dir: path::PathBuf,
 }
 
 impl CargoTestRunner {
-    pub fn new(feature_set: Vec<String>, working_dir: path::PathBuf) -> Self {
+    pub fn new(crate_name: String, feature_set: Vec<String>, working_dir: path::PathBuf) -> Self {
         let command = process::Command::new(&crate::cargo_cmd());
 
         let mut s = CargoTestRunner {
+            crate_name,
             command,
             feature_set,
             working_dir,
@@ -35,9 +37,13 @@ impl CargoTestRunner {
                     .set_bold(true),
             )
             .unwrap();
-        print!("    Features ");
+        print!("     Testing ");
         stdout.reset().unwrap();
-        println!("[{}]", self.feature_set.join(", "));
+        println!(
+            "crate={} features=[{}]",
+            self.crate_name,
+            self.feature_set.join(", ")
+        );
 
         let output = self
             .command
