@@ -4,28 +4,10 @@ mod features_finder;
 mod test_runner;
 
 fn main() -> Result<(), Box<dyn error::Error>> {
-    let metadata = fetch_cargo_metadata()?;
-
-    let current_dir = env::current_dir()?;
-
-    let packages = if env::current_dir()? == metadata.workspace_root {
-        metadata
-            .packages
-            .iter()
-            .filter(|package| metadata.workspace_members.contains(&package.id))
-            .cloned()
-            .collect::<Vec<cargo_metadata::Package>>()
-    } else {
-        vec![metadata
-            .packages
-            .iter()
-            .find(|package| package.manifest_path.parent() == Some(&current_dir))
-            .expect("Could not find cargo package in metadata")
-            .to_owned()]
-    };
+    let packages = determine_packages_to_test()?;
 
     for package in packages {
-        let outcome = run_all_feature_tests_for_package(&package)?;
+        let outcome = test_all_features_for_package(&package)?;
 
         if outcome == TestOutcome::Fail {
             break;
@@ -35,7 +17,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     Ok(())
 }
 
-fn run_all_feature_tests_for_package(
+fn test_all_features_for_package(
     package: &cargo_metadata::Package,
 ) -> Result<TestOutcome, Box<dyn error::Error>> {
     let feature_sets = features_finder::fetch_feature_sets(package);
@@ -66,6 +48,26 @@ fn run_all_feature_tests_for_package(
     Ok(TestOutcome::Fail)
 }
 
+fn determine_packages_to_test() -> Result<Vec<cargo_metadata::Package>, Box<dyn error::Error>> {
+    let current_dir = env::current_dir()?;
+    let metadata = fetch_cargo_metadata()?;
+
+    Ok(if current_dir == metadata.workspace_root {
+        metadata
+            .packages
+            .iter()
+            .filter(|package| metadata.workspace_members.contains(&package.id))
+            .cloned()
+            .collect::<Vec<cargo_metadata::Package>>()
+    } else {
+        vec![metadata
+            .packages
+            .iter()
+            .find(|package| package.manifest_path.parent() == Some(&current_dir))
+            .expect("Could not find cargo package in metadata")
+            .to_owned()]
+    })
+}
 
 fn fetch_cargo_metadata() -> Result<cargo_metadata::Metadata, Box<dyn error::Error>> {
     let json = fetch_cargo_metadata_json()?;
