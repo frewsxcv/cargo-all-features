@@ -20,8 +20,7 @@ cargo test-all-features <CARGO TEST FLAGS>
 
 ## Why?
 
-- Setting up matrices in CI can be burdensome.
-- Sometimes you don't remember
+If you have a crate that utilizes Rust feature flags, it’s common to set up a test matrix in your continuous integration tooling to _individually_ test all feature flags. This setup can be difficult to maintain and easy to forget to update as feature flags come and go. It’s also not exhaustive, as it’s possible enabling _combinations_ of feature flags could result in a compilation error that should be fixed. This utility was built to address these concerns.
 
 ## License
 
