@@ -33,11 +33,6 @@ fn test_all_features_for_package(
                 .to_owned(),
         );
 
-        if !feature_set.is_empty() {
-            test_runner.arg("--features");
-            test_runner.arg(&feature_set.join(","));
-        }
-
         let outcome = test_runner.run()?;
 
         if outcome == TestOutcome::Fail {

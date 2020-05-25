@@ -10,29 +10,30 @@ pub struct TestRunner {
 
 impl TestRunner {
     pub fn new(crate_name: String, feature_set: Vec<String>, working_dir: path::PathBuf) -> Self {
-        let command = process::Command::new(&crate::cargo_cmd());
+        let mut command = process::Command::new(&crate::cargo_cmd());
 
-        let mut s = TestRunner {
+        command.arg("test");
+        command.arg("--no-default-features");
+
+        if !feature_set.is_empty() {
+            command.arg("--features");
+            command.arg(&feature_set.join(","));
+        }
+
+        // Pass through cargo args
+        for arg in env::args().skip(2) {
+            command.arg(&arg);
+        }
+
+        TestRunner {
             crate_name,
             command,
             feature_set,
             working_dir,
-        };
-        s.arg("test");
-        s.arg("--no-default-features");
-
-        s
-    }
-
-    pub fn arg(&mut self, arg: &str) {
-        self.command.arg(arg);
+        }
     }
 
     pub fn run(&mut self) -> Result<crate::TestOutcome, Box<dyn error::Error>> {
-        for arg in env::args().skip(2) {
-            self.command.arg(&arg);
-        }
-
         let mut stdout = termcolor::StandardStream::stdout(termcolor::ColorChoice::Auto);
         stdout
             .set_color(
