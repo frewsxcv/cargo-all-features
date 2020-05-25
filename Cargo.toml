@@ -6,6 +6,7 @@ edition = "2018"
 description = "A Cargo subcommand to build and test all feature flag combinations"
 repository = "https://github.com/frewsxcv/cargo-all-features"
 license = "MIT/Apache-2.0"
+readme = "./README.md"
 
 [[bin]]
 name = "cargo-build-all-features"
