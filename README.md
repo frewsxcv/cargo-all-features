@@ -1,6 +1,6 @@
 # cargo-test-all-features
 
-A [Cargo] subcommand to test a crate with all feature flag combinations.
+A [Cargo] subcommand to test all feature flag combinations.
 
 <img src=https://i.imgur.com/OVBRtEC.png width=500>
 
