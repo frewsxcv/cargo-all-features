@@ -39,6 +39,7 @@ impl CargoTestRunner {
 
         let output = self
             .command
+            .stdout(process::Stdio::inherit())
             .stderr(process::Stdio::inherit())
             .output()
             .unwrap(); // fixme
