@@ -40,7 +40,7 @@ fn test_all_features_for_package(
         }
     }
 
-    Ok(TestOutcome::Fail)
+    Ok(TestOutcome::Success)
 }
 
 fn determine_packages_to_test() -> Result<Vec<cargo_metadata::Package>, Box<dyn error::Error>> {
