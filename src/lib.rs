@@ -3,7 +3,24 @@ use std::{env, error, ffi, process};
 pub mod features_finder;
 pub mod test_runner;
 
-pub fn test_all_features_for_package(
+pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error::Error>> {
+    let packages = determine_packages_to_test()?;
+
+    for package in packages {
+        let outcome = test_all_features_for_package(
+            &package,
+            cargo_command,
+        )?;
+
+        if let TestOutcome::Fail(exit_status) = outcome {
+            process::exit(exit_status.code().unwrap());
+        }
+    }
+
+    Ok(())
+}
+
+fn test_all_features_for_package(
     package: &cargo_metadata::Package,
     command: crate::test_runner::CargoCommand,
 ) -> Result<TestOutcome, Box<dyn error::Error>> {
@@ -33,7 +50,7 @@ pub fn test_all_features_for_package(
     Ok(TestOutcome::Pass)
 }
 
-pub fn determine_packages_to_test() -> Result<Vec<cargo_metadata::Package>, Box<dyn error::Error>> {
+fn determine_packages_to_test() -> Result<Vec<cargo_metadata::Package>, Box<dyn error::Error>> {
     let current_dir = env::current_dir()?;
     let metadata = fetch_cargo_metadata()?;
 
@@ -74,7 +91,7 @@ fn fetch_cargo_metadata_json() -> Result<String, Box<dyn error::Error>> {
     Ok(String::from_utf8(output.stdout)?)
 }
 
-pub fn cargo_cmd() -> ffi::OsString {
+fn cargo_cmd() -> ffi::OsString {
     env::var_os("CARGO").unwrap_or_else(|| ffi::OsString::from("cargo"))
 }
 
