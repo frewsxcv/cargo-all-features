@@ -1,4 +1,4 @@
-use std::{error, path, process};
+use std::{env, error, path, process};
 use termcolor::WriteColor;
 
 pub struct TestRunner {
@@ -29,6 +29,10 @@ impl TestRunner {
     }
 
     pub fn run(&mut self) -> Result<crate::TestOutcome, Box<dyn error::Error>> {
+        for arg in env::args().skip(2) {
+            self.command.arg(&arg);
+        }
+
         let mut stdout = termcolor::StandardStream::stdout(termcolor::ColorChoice::Auto);
         stdout
             .set_color(
