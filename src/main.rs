@@ -58,7 +58,10 @@ impl CargoTestRunner {
     fn new(feature_set: Vec<String>) -> Self {
         let command = process::Command::new(&cargo_cmd());
 
-        let mut s = CargoTestRunner { command, feature_set };
+        let mut s = CargoTestRunner {
+            command,
+            feature_set,
+        };
         s.arg("test");
         s.arg("--no-default-features");
 
@@ -71,17 +74,26 @@ impl CargoTestRunner {
 
     fn run(&mut self) {
         let mut stdout = termcolor::StandardStream::stdout(termcolor::ColorChoice::Auto);
-        stdout.set_color(termcolor::ColorSpec::new().set_fg(Some(termcolor::Color::Cyan)).set_bold(true)).unwrap();
+        stdout
+            .set_color(
+                termcolor::ColorSpec::new()
+                    .set_fg(Some(termcolor::Color::Cyan))
+                    .set_bold(true),
+            )
+            .unwrap();
         print!("    Features ");
         stdout.reset().unwrap();
         println!("[{}]", self.feature_set.join(", "));
 
-        let output = self.command.stderr(process::Stdio::inherit()).output().unwrap(); // fixme
+        let output = self
+            .command
+            .stderr(process::Stdio::inherit())
+            .output()
+            .unwrap(); // fixme
 
         if !output.status.success() {
             panic!("todo"); // fixme
         }
-
     }
 }
 
@@ -95,7 +107,12 @@ fn fetch_optional_dependencies(package: &cargo_metadata::Package) -> Vec<String>
 }
 
 fn fetch_features(package: &cargo_metadata::Package) -> Vec<String> {
-    package.features.keys().filter(|key| key != &"default").cloned().collect()
+    package
+        .features
+        .keys()
+        .filter(|key| key != &"default")
+        .cloned()
+        .collect()
 }
 
 fn fetch_cargo_metadata() -> Result<cargo_metadata::Metadata, Box<dyn error::Error>> {
