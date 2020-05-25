@@ -1,6 +1,6 @@
-use itertools::Itertools;
 use std::{env, error, ffi, process};
 
+mod features_finder;
 mod test_runner;
 
 fn main() -> Result<(), Box<dyn error::Error>> {
@@ -38,7 +38,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
 fn run_all_feature_tests_for_package(
     package: &cargo_metadata::Package,
 ) -> Result<TestOutcome, Box<dyn error::Error>> {
-    let feature_sets = fetch_feature_sets(package);
+    let feature_sets = features_finder::fetch_feature_sets(package);
 
     for feature_set in feature_sets {
         let mut test_runner = test_runner::TestRunner::new(
@@ -66,39 +66,6 @@ fn run_all_feature_tests_for_package(
     Ok(TestOutcome::Fail)
 }
 
-fn fetch_feature_sets(package: &cargo_metadata::Package) -> Vec<Vec<String>> {
-    let mut features = vec![];
-    features.append(&mut fetch_optional_dependencies(&package));
-    features.append(&mut fetch_features(&package));
-
-    let mut feature_sets = vec![];
-
-    for n in 0..=features.len() {
-        for feature_set in features.iter().combinations(n) {
-            feature_sets.push(feature_set.iter().map(|n| n.to_string()).collect());
-        }
-    }
-
-    feature_sets
-}
-
-fn fetch_optional_dependencies(package: &cargo_metadata::Package) -> Vec<String> {
-    package
-        .dependencies
-        .iter()
-        .filter(|dependency| dependency.optional)
-        .map(|dependency| dependency.name.to_string())
-        .collect()
-}
-
-fn fetch_features(package: &cargo_metadata::Package) -> Vec<String> {
-    package
-        .features
-        .keys()
-        .filter(|key| key != &"default")
-        .cloned()
-        .collect()
-}
 
 fn fetch_cargo_metadata() -> Result<cargo_metadata::Metadata, Box<dyn error::Error>> {
     let json = fetch_cargo_metadata_json()?;
