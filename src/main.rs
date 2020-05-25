@@ -40,7 +40,7 @@ fn test_all_features_for_package(
         }
     }
 
-    Ok(TestOutcome::Success)
+    Ok(TestOutcome::Pass)
 }
 
 fn determine_packages_to_test() -> Result<Vec<cargo_metadata::Package>, Box<dyn error::Error>> {
@@ -90,6 +90,6 @@ fn cargo_cmd() -> ffi::OsString {
 
 #[derive(Eq, PartialEq)]
 pub enum TestOutcome {
-    Success,
+    Pass,
     Fail,
 }
