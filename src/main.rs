@@ -18,6 +18,12 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         .find(|package| package.manifest_path.parent() == Some(&current_dir))
         .unwrap();
 
+    run_all_feature_tests_for_package(&package);
+
+    Ok(())
+}
+
+fn run_all_feature_tests_for_package(package: &cargo_metadata::Package) {
     let feature_sets = fetch_feature_sets(package);
 
     for feature_set in feature_sets {
@@ -30,8 +36,6 @@ fn main() -> Result<(), Box<dyn error::Error>> {
 
         cargo_test_runner.run();
     }
-
-    Ok(())
 }
 
 fn fetch_feature_sets(package: &cargo_metadata::Package) -> Vec<Vec<String>> {
