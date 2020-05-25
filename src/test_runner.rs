@@ -1,18 +1,18 @@
 use std::{error, path, process};
 use termcolor::WriteColor;
 
-pub struct CargoTestRunner {
+pub struct TestRunner {
     command: process::Command,
     crate_name: String,
     feature_set: Vec<String>,
     working_dir: path::PathBuf,
 }
 
-impl CargoTestRunner {
+impl TestRunner {
     pub fn new(crate_name: String, feature_set: Vec<String>, working_dir: path::PathBuf) -> Self {
         let command = process::Command::new(&crate::cargo_cmd());
 
-        let mut s = CargoTestRunner {
+        let mut s = TestRunner {
             crate_name,
             command,
             feature_set,

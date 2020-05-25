@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use std::{env, error, ffi, process};
 
-mod cargo_test_runner;
+mod test_runner;
 
 fn main() -> Result<(), Box<dyn error::Error>> {
     let metadata = fetch_cargo_metadata()?;
@@ -41,7 +41,7 @@ fn run_all_feature_tests_for_package(
     let feature_sets = fetch_feature_sets(package);
 
     for feature_set in feature_sets {
-        let mut cargo_test_runner = cargo_test_runner::CargoTestRunner::new(
+        let mut test_runner = test_runner::TestRunner::new(
             package.name.clone(),
             feature_set.clone(),
             package
@@ -52,11 +52,11 @@ fn run_all_feature_tests_for_package(
         );
 
         if !feature_set.is_empty() {
-            cargo_test_runner.arg("--features");
-            cargo_test_runner.arg(&feature_set.join(","));
+            test_runner.arg("--features");
+            test_runner.arg(&feature_set.join(","));
         }
 
-        let outcome = cargo_test_runner.run()?;
+        let outcome = test_runner.run()?;
 
         if outcome == TestOutcome::Fail {
             return Ok(TestOutcome::Fail);
