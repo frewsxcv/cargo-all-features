@@ -2,7 +2,7 @@
 
 A [Cargo] subcommand to test all a crate with all feature flag combinations.
 
-![](https://i.imgur.com/OVBRtEC.png)
+<img src=https://i.imgur.com/OVBRtEC.png width=500>
 
 ## Install
 
