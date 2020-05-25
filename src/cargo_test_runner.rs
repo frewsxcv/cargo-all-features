@@ -1,4 +1,4 @@
-use std::{path, process};
+use std::{error, path, process};
 use termcolor::WriteColor;
 
 pub struct CargoTestRunner {
@@ -28,7 +28,7 @@ impl CargoTestRunner {
         self.command.arg(arg);
     }
 
-    pub fn run(&mut self) {
+    pub fn run(&mut self) -> Result<crate::TestOutcome, Box<dyn error::Error>> {
         let mut stdout = termcolor::StandardStream::stdout(termcolor::ColorChoice::Auto);
         stdout
             .set_color(
@@ -50,11 +50,12 @@ impl CargoTestRunner {
             .stdout(process::Stdio::inherit())
             .stderr(process::Stdio::inherit())
             .current_dir(&self.working_dir)
-            .output()
-            .unwrap(); // fixme
+            .output()?;
 
-        if !output.status.success() {
-            panic!("todo"); // fixme
-        }
+        Ok(if output.status.success() {
+            crate::TestOutcome::Success
+        } else {
+            crate::TestOutcome::Fail
+        })
     }
 }

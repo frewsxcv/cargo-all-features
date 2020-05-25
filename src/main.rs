@@ -25,13 +25,19 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     };
 
     for package in packages {
-        run_all_feature_tests_for_package(&package);
+        let outcome = run_all_feature_tests_for_package(&package)?;
+
+        if outcome == TestOutcome::Fail {
+            break;
+        }
     }
 
     Ok(())
 }
 
-fn run_all_feature_tests_for_package(package: &cargo_metadata::Package) {
+fn run_all_feature_tests_for_package(
+    package: &cargo_metadata::Package,
+) -> Result<TestOutcome, Box<dyn error::Error>> {
     let feature_sets = fetch_feature_sets(package);
 
     for feature_set in feature_sets {
@@ -50,8 +56,14 @@ fn run_all_feature_tests_for_package(package: &cargo_metadata::Package) {
             cargo_test_runner.arg(&feature_set.join(","));
         }
 
-        cargo_test_runner.run();
+        let outcome = cargo_test_runner.run()?;
+
+        if outcome == TestOutcome::Fail {
+            return Ok(TestOutcome::Fail);
+        }
     }
+
+    Ok(TestOutcome::Fail)
 }
 
 fn fetch_feature_sets(package: &cargo_metadata::Package) -> Vec<Vec<String>> {
@@ -110,4 +122,10 @@ fn fetch_cargo_metadata_json() -> Result<String, Box<dyn error::Error>> {
 
 fn cargo_cmd() -> ffi::OsString {
     env::var_os("CARGO").unwrap_or_else(|| ffi::OsString::from("cargo"))
+}
+
+#[derive(Eq, PartialEq)]
+pub enum TestOutcome {
+    Success,
+    Fail,
 }
