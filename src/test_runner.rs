@@ -6,6 +6,7 @@ pub struct TestRunner {
     crate_name: String,
     feature_set: Vec<String>,
     working_dir: path::PathBuf,
+    cargo_command: CargoCommand,
 }
 
 impl TestRunner {
@@ -38,6 +39,7 @@ impl TestRunner {
             command,
             feature_set,
             working_dir,
+            cargo_command,
         }
     }
 
@@ -50,7 +52,10 @@ impl TestRunner {
                     .set_bold(true),
             )
             .unwrap();
-        print!("     Testing ");
+        match self.cargo_command {
+            CargoCommand::Build => print!("    Building "),
+            CargoCommand::Test => print!("     Testing "),
+        }
         stdout.reset().unwrap();
         println!(
             "crate={} features=[{}]",
