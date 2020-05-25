@@ -6,19 +6,27 @@ mod cargo_test_runner;
 fn main() -> Result<(), Box<dyn error::Error>> {
     let metadata = fetch_cargo_metadata()?;
 
-    // if env::current_dir()? == metadata.workspace_root {
-    //     panic!("in the workspace root");
-    // }
-
     let current_dir = env::current_dir()?;
 
-    let package = metadata
-        .packages
-        .iter()
-        .find(|package| package.manifest_path.parent() == Some(&current_dir))
-        .unwrap();
+    let packages = if env::current_dir()? == metadata.workspace_root {
+        metadata
+            .packages
+            .iter()
+            .filter(|package| metadata.workspace_members.contains(&package.id))
+            .cloned()
+            .collect::<Vec<cargo_metadata::Package>>()
+    } else {
+        vec![metadata
+            .packages
+            .iter()
+            .find(|package| package.manifest_path.parent() == Some(&current_dir))
+            .unwrap()
+            .to_owned()]
+    };
 
-    run_all_feature_tests_for_package(&package);
+    for package in packages {
+        run_all_feature_tests_for_package(&package);
+    }
 
     Ok(())
 }
@@ -56,7 +64,6 @@ fn fetch_feature_sets(package: &cargo_metadata::Package) -> Vec<Vec<String>> {
 
     feature_sets
 }
-
 
 fn fetch_optional_dependencies(package: &cargo_metadata::Package) -> Vec<String> {
     package
