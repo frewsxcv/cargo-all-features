@@ -9,8 +9,8 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     for package in packages {
         let outcome = test_all_features_for_package(&package)?;
 
-        if outcome == TestOutcome::Fail {
-            break;
+        if let TestOutcome::Fail(exit_status) = outcome {
+            process::exit(exit_status.code().unwrap());
         }
     }
 
@@ -35,8 +35,9 @@ fn test_all_features_for_package(
 
         let outcome = test_runner.run()?;
 
-        if outcome == TestOutcome::Fail {
-            return Ok(TestOutcome::Fail);
+        match outcome {
+            t @ TestOutcome::Fail(_) => return Ok(t),
+            TestOutcome::Pass => (),
         }
     }
 
@@ -91,5 +92,5 @@ fn cargo_cmd() -> ffi::OsString {
 #[derive(Eq, PartialEq)]
 pub enum TestOutcome {
     Pass,
-    Fail,
+    Fail(process::ExitStatus),
 }

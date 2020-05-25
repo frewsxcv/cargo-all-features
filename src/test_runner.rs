@@ -60,7 +60,7 @@ impl TestRunner {
         Ok(if output.status.success() {
             crate::TestOutcome::Pass
         } else {
-            crate::TestOutcome::Fail
+            crate::TestOutcome::Fail(output.status)
         })
     }
 }
