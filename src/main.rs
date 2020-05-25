@@ -27,7 +27,10 @@ fn run_all_feature_tests_for_package(package: &cargo_metadata::Package) {
     let feature_sets = fetch_feature_sets(package);
 
     for feature_set in feature_sets {
-        let mut cargo_test_runner = cargo_test_runner::CargoTestRunner::new(feature_set.clone());
+        let mut cargo_test_runner = cargo_test_runner::CargoTestRunner::new(
+            feature_set.clone(),
+            package.manifest_path.parent().unwrap().to_owned(),
+        );
 
         if !feature_set.is_empty() {
             cargo_test_runner.arg("--features");

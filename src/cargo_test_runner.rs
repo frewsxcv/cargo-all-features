@@ -1,18 +1,20 @@
-use std::process;
+use std::{path, process};
 use termcolor::WriteColor;
 
 pub struct CargoTestRunner {
     command: process::Command,
     feature_set: Vec<String>,
+    working_dir: path::PathBuf,
 }
 
 impl CargoTestRunner {
-    pub fn new(feature_set: Vec<String>) -> Self {
+    pub fn new(feature_set: Vec<String>, working_dir: path::PathBuf) -> Self {
         let command = process::Command::new(&crate::cargo_cmd());
 
         let mut s = CargoTestRunner {
             command,
             feature_set,
+            working_dir,
         };
         s.arg("test");
         s.arg("--no-default-features");
@@ -41,6 +43,7 @@ impl CargoTestRunner {
             .command
             .stdout(process::Stdio::inherit())
             .stderr(process::Stdio::inherit())
+            .current_dir(&self.working_dir)
             .output()
             .unwrap(); // fixme
 
