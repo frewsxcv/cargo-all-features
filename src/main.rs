@@ -95,8 +95,6 @@ fn fetch_cargo_metadata_json() -> Result<String, Box<dyn error::Error>> {
 
     command.arg("metadata").arg("--format-version").arg("1");
 
-    // fixme: cargo metadata
-
     let output = command.stderr(process::Stdio::inherit()).output().unwrap(); // fixme
 
     if !output.status.success() {
