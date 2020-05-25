@@ -12,6 +12,8 @@ cargo install cargo-all-features
 
 ## Usage
 
+The following commands can be run within a Cargo package or at the root of a Cargo workspace.
+
 Build crate with all feature flag combinations:
 
 ```
@@ -23,6 +25,7 @@ Test crate with all feature flag combinations:
 ```
 cargo test-all-features <CARGO TEST FLAGS>
 ```
+
 
 ## Why?
 
