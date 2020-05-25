@@ -1,6 +1,7 @@
 use itertools::Itertools;
 use std::{env, error, ffi, process};
-use termcolor::WriteColor;
+
+mod cargo_test_runner;
 
 fn main() -> Result<(), Box<dyn error::Error>> {
     let metadata = fetch_cargo_metadata()?;
@@ -20,7 +21,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     let feature_sets = fetch_feature_sets(package);
 
     for feature_set in feature_sets {
-        let mut cargo_test_runner = CargoTestRunner::new(feature_set.clone());
+        let mut cargo_test_runner = cargo_test_runner::CargoTestRunner::new(feature_set.clone());
 
         if !feature_set.is_empty() {
             cargo_test_runner.arg("--features");
@@ -49,53 +50,6 @@ fn fetch_feature_sets(package: &cargo_metadata::Package) -> Vec<Vec<String>> {
     feature_sets
 }
 
-struct CargoTestRunner {
-    command: process::Command,
-    feature_set: Vec<String>,
-}
-
-impl CargoTestRunner {
-    fn new(feature_set: Vec<String>) -> Self {
-        let command = process::Command::new(&cargo_cmd());
-
-        let mut s = CargoTestRunner {
-            command,
-            feature_set,
-        };
-        s.arg("test");
-        s.arg("--no-default-features");
-
-        s
-    }
-
-    fn arg(&mut self, arg: &str) {
-        self.command.arg(arg);
-    }
-
-    fn run(&mut self) {
-        let mut stdout = termcolor::StandardStream::stdout(termcolor::ColorChoice::Auto);
-        stdout
-            .set_color(
-                termcolor::ColorSpec::new()
-                    .set_fg(Some(termcolor::Color::Cyan))
-                    .set_bold(true),
-            )
-            .unwrap();
-        print!("    Features ");
-        stdout.reset().unwrap();
-        println!("[{}]", self.feature_set.join(", "));
-
-        let output = self
-            .command
-            .stderr(process::Stdio::inherit())
-            .output()
-            .unwrap(); // fixme
-
-        if !output.status.success() {
-            panic!("todo"); // fixme
-        }
-    }
-}
 
 fn fetch_optional_dependencies(package: &cargo_metadata::Package) -> Vec<String> {
     package
