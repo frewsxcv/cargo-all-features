@@ -21,7 +21,13 @@ fn fetch_optional_dependencies(package: &crate::cargo_metadata::Package) -> Vec<
         .dependencies
         .iter()
         .filter(|dependency| dependency.optional)
-        .map(|dependency| dependency.name.to_string())
+        .map(|dependency| {
+            if let Some(name) = &dependency.rename {
+                name.to_string()
+            } else {
+                dependency.name.to_string()
+            }
+        })
         .collect()
 }
 

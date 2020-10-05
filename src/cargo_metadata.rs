@@ -23,16 +23,17 @@ fn fetch_cargo_metadata_json() -> Result<String, Box<dyn error::Error>> {
 #[derive(Clone)]
 pub struct Dependency {
     pub name: String,
+    pub rename: Option<String>,
     pub optional: bool,
 }
 
 impl From<json::JsonValue> for Dependency {
     fn from(json_value: json::JsonValue) -> Self {
         let name = json_value["name"].as_str().unwrap().to_owned();
-
+        let rename = json_value["rename"].as_str().map(|s| s.to_string());
         let optional = json_value["optional"].as_bool().unwrap();
 
-        Dependency { name, optional }
+        Dependency { name, rename, optional }
     }
 }
 
