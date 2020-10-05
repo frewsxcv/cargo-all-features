@@ -36,6 +36,8 @@ fn fetch_features(package: &crate::cargo_metadata::Package) -> Vec<String> {
         .features
         .iter()
         .filter(|key| key != &"default")
+        // Some crates use "__" to indicate internal features
+        .filter(|key| !key.starts_with("__"))
         .cloned()
         .collect()
 }
