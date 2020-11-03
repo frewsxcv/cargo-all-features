@@ -31,6 +31,27 @@ cargo test-all-features <CARGO TEST FLAGS>
 
 If you have a crate that utilizes Rust feature flags, it’s common to set up a test matrix in your continuous integration tooling to _individually_ test all feature flags. This setup can be difficult to maintain and easy to forget to update as feature flags come and go. It’s also not exhaustive, as it’s possible enabling _combinations_ of feature flags could result in a compilation error that should be fixed. This utility was built to address these concerns.
 
+## Options
+
+You can add the following options to your Cargo.toml file to configure the behavior of cargo-all-features under the heading `[package.metadata.cargo-all-features]`:
+
+```toml
+[package.metadata.cargo-all-features]
+
+# Features "foo" and "bar" are incompatible, so skip permutations including them
+skip_feature_sets = [
+    ["foo", "bar"],
+]
+
+# If your crate has a large number of optional dependencies, skip them for speed
+skip_optional_dependencies = true
+
+# Add back certain optional dependencies that you want to include in the permutations
+extra_features = [
+    "log",
+]
+```
+
 ## License
 
 Licensed under either of
