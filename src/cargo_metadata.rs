@@ -44,6 +44,9 @@ pub struct Package {
     pub manifest_path: path::PathBuf,
     pub dependencies: Vec<Dependency>,
     pub features: Vec<String>,
+    pub skip_feature_sets: Vec<Vec<String>>,
+    pub skip_optional_dependencies: bool,
+    pub extra_features: Vec<String>,
 }
 
 impl From<json::JsonValue> for Package {
@@ -60,6 +63,28 @@ impl From<json::JsonValue> for Package {
             .entries()
             .map(|(k, _v)| k.to_owned())
             .collect();
+        let skip_feature_sets: Vec<Vec<String>> = json_value["metadata"]
+            ["cargo-all-features"]
+            ["skip_feature_sets"]
+            .members()
+            .map(|member| {
+                member
+                    .members()
+                    .map(|feature| feature.as_str().unwrap().to_owned())
+                    .collect()
+            })
+            .collect();
+        let skip_optional_dependencies: bool = json_value["metadata"]
+            ["cargo-all-features"]
+            ["skip_optional_dependencies"]
+            .as_bool()
+            .unwrap_or(false);
+        let extra_features: Vec<String> = json_value["metadata"]
+            ["cargo-all-features"]
+            ["extra_features"]
+            .members()
+            .map(|member| member.as_str().unwrap().to_owned())
+            .collect();
 
         Package {
             id,
@@ -67,6 +92,9 @@ impl From<json::JsonValue> for Package {
             manifest_path,
             dependencies,
             features,
+            skip_feature_sets,
+            skip_optional_dependencies,
+            extra_features,
         }
     }
 }

@@ -2,13 +2,26 @@ use itertools::Itertools;
 
 pub fn fetch_feature_sets(package: &crate::cargo_metadata::Package) -> Vec<Vec<String>> {
     let mut features = vec![];
-    features.append(&mut fetch_optional_dependencies(&package));
+    if !package.skip_optional_dependencies {
+        features.append(&mut fetch_optional_dependencies(&package));
+    }
     features.append(&mut fetch_features(&package));
+    features.extend(package.extra_features.iter().cloned());
 
     let mut feature_sets = vec![];
 
     for n in 0..=features.len() {
-        for feature_set in features.iter().combinations(n) {
+        'outer: for feature_set in features.iter().combinations(n) {
+            'inner: for skip_feature_set in &package.skip_feature_sets {
+                for feature in skip_feature_set {
+                    if !feature_set.contains(&feature) {
+                        // skip_feature_set does not match
+                        continue 'inner;
+                    }
+                }
+                // skip_feature_set matches: do not add it to feature_sets
+                continue 'outer;
+            }
             feature_sets.push(feature_set.iter().map(|n| n.to_string()).collect());
         }
     }
