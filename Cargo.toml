@@ -18,5 +18,5 @@ path = "src/bin/cargo-test-all-features.rs"
 
 [dependencies]
 json = "0.12"
-itertools = "0.9"
+itertools = "0.10"
 termcolor = "1"
