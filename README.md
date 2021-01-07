@@ -20,6 +20,12 @@ Build crate with all feature flag combinations:
 cargo build-all-features <CARGO BUILD FLAGS>
 ```
 
+Check crate with all feature flag combinations:
+
+```
+cargo check-all-features <CARGO TEST FLAGS>
+```
+
 Test crate with all feature flag combinations:
 
 ```
