@@ -23,7 +23,7 @@ cargo build-all-features <CARGO BUILD FLAGS>
 Check crate with all feature flag combinations:
 
 ```
-cargo check-all-features <CARGO TEST FLAGS>
+cargo check-all-features <CARGO CHECK FLAGS>
 ```
 
 Test crate with all feature flag combinations:
