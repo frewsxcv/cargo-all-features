@@ -20,6 +20,7 @@ impl TestRunner {
 
         command.arg(match cargo_command {
             CargoCommand::Build => "build",
+            CargoCommand::Check => "check",
             CargoCommand::Test => "test",
         });
         command.arg("--no-default-features");
@@ -54,6 +55,7 @@ impl TestRunner {
             .unwrap();
         match self.cargo_command {
             CargoCommand::Build => print!("    Building "),
+            CargoCommand::Check => print!("    Checking "),
             CargoCommand::Test => print!("     Testing "),
         }
         stdout.reset().unwrap();
@@ -81,5 +83,6 @@ impl TestRunner {
 #[derive(Copy, Clone)]
 pub enum CargoCommand {
     Build,
+    Check,
     Test,
 }
