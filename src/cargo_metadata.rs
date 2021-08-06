@@ -46,6 +46,8 @@ pub struct Package {
     pub features: Vec<String>,
     pub skip_feature_sets: Vec<Vec<String>>,
     pub skip_optional_dependencies: bool,
+    pub allowlist: Vec<String>,
+    pub denylist: Vec<String>,
     pub extra_features: Vec<String>,
 }
 
@@ -86,6 +88,20 @@ impl From<json::JsonValue> for Package {
             .map(|member| member.as_str().unwrap().to_owned())
             .collect();
 
+        let allowlist: Vec<String> = json_value["metadata"]
+            ["cargo-all-features"]
+            ["allowlist"]
+            .members()
+            .map(|member| member.as_str().unwrap().to_owned())
+            .collect();
+
+        let denylist: Vec<String> = json_value["metadata"]
+            ["cargo-all-features"]
+            ["denylist"]
+            .members()
+            .map(|member| member.as_str().unwrap().to_owned())
+            .collect();
+
         Package {
             id,
             name,
@@ -95,6 +111,8 @@ impl From<json::JsonValue> for Package {
             skip_feature_sets,
             skip_optional_dependencies,
             extra_features,
+            allowlist,
+            denylist
         }
     }
 }
