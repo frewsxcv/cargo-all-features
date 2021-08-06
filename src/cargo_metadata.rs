@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::{error, path, process};
 
@@ -52,7 +53,7 @@ pub struct Package {
     pub skip_feature_sets: Vec<Vec<String>>,
     pub skip_optional_dependencies: bool,
     pub allowlist: Vec<String>,
-    pub denylist: Vec<String>,
+    pub denylist: HashSet<String>,
     pub extra_features: Vec<String>,
 }
 
@@ -95,7 +96,7 @@ impl TryFrom<json::JsonValue> for Package {
             .map(|member| member.as_str().unwrap().to_owned())
             .collect();
 
-        let denylist: Vec<String> = json_value["metadata"]["cargo-all-features"]["denylist"]
+        let denylist: HashSet<String> = json_value["metadata"]["cargo-all-features"]["denylist"]
             .members()
             .map(|member| member.as_str().unwrap().to_owned())
             .collect();

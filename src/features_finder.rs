@@ -2,11 +2,25 @@ use itertools::Itertools;
 
 pub fn fetch_feature_sets(package: &crate::cargo_metadata::Package) -> Vec<Vec<String>> {
     let mut features = vec![];
-    if !package.skip_optional_dependencies {
-        features.append(&mut fetch_optional_dependencies(&package));
-    }
-    features.append(&mut fetch_features(&package));
-    features.extend(package.extra_features.iter().cloned());
+    let filter_denylist = |f: &String| !package.denylist.contains(f);
+
+    if package.allowlist.is_empty() {
+        if !package.skip_optional_dependencies {
+            features.extend(fetch_optional_dependencies(&package).filter(filter_denylist));
+        }
+        features.extend(fetch_features(&package).filter(filter_denylist));
+        features.extend(
+            package
+                .extra_features
+                .iter()
+                .cloned()
+                .filter(filter_denylist),
+        );
+    } else {
+        // allowlist cannot be mixed with denylist or any of the other above options,
+        // no need to filter
+        features.extend(package.allowlist.iter().cloned())
+    };
 
     let mut feature_sets = vec![];
 
@@ -29,7 +43,9 @@ pub fn fetch_feature_sets(package: &crate::cargo_metadata::Package) -> Vec<Vec<S
     feature_sets
 }
 
-fn fetch_optional_dependencies(package: &crate::cargo_metadata::Package) -> Vec<String> {
+fn fetch_optional_dependencies(
+    package: &crate::cargo_metadata::Package,
+) -> impl Iterator<Item = String> + '_ {
     package
         .dependencies
         .iter()
@@ -41,10 +57,9 @@ fn fetch_optional_dependencies(package: &crate::cargo_metadata::Package) -> Vec<
                 dependency.name.to_string()
             }
         })
-        .collect()
 }
 
-fn fetch_features(package: &crate::cargo_metadata::Package) -> Vec<String> {
+fn fetch_features(package: &crate::cargo_metadata::Package) -> impl Iterator<Item = String> + '_ {
     package
         .features
         .iter()
@@ -52,5 +67,4 @@ fn fetch_features(package: &crate::cargo_metadata::Package) -> Vec<String> {
         // Some crates use "__" to indicate internal features
         .filter(|key| !key.starts_with("__"))
         .cloned()
-        .collect()
 }
