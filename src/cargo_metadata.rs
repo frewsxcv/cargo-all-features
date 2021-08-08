@@ -1,9 +1,11 @@
+use std::collections::HashSet;
+use std::convert::TryFrom;
 use std::{error, path, process};
 
 pub fn fetch() -> Result<Metadata, Box<dyn error::Error>> {
     let json = fetch_cargo_metadata_json()?;
     let json_value = json::parse(&json)?;
-    Ok(Metadata::from(json_value))
+    Ok(Metadata::try_from(json_value)?)
 }
 
 fn fetch_cargo_metadata_json() -> Result<String, Box<dyn error::Error>> {
@@ -33,7 +35,11 @@ impl From<json::JsonValue> for Dependency {
         let rename = json_value["rename"].as_str().map(|s| s.to_string());
         let optional = json_value["optional"].as_bool().unwrap();
 
-        Dependency { name, rename, optional }
+        Dependency {
+            name,
+            rename,
+            optional,
+        }
     }
 }
 
@@ -46,11 +52,14 @@ pub struct Package {
     pub features: Vec<String>,
     pub skip_feature_sets: Vec<Vec<String>>,
     pub skip_optional_dependencies: bool,
+    pub allowlist: Vec<String>,
+    pub denylist: HashSet<String>,
     pub extra_features: Vec<String>,
 }
 
-impl From<json::JsonValue> for Package {
-    fn from(json_value: json::JsonValue) -> Self {
+impl TryFrom<json::JsonValue> for Package {
+    type Error = String;
+    fn try_from(json_value: json::JsonValue) -> Result<Self, String> {
         let id = json_value["id"].as_str().unwrap().to_owned();
         let name = json_value["name"].as_str().unwrap().to_owned();
         let manifest_path =
@@ -63,8 +72,7 @@ impl From<json::JsonValue> for Package {
             .entries()
             .map(|(k, _v)| k.to_owned())
             .collect();
-        let skip_feature_sets: Vec<Vec<String>> = json_value["metadata"]
-            ["cargo-all-features"]
+        let skip_feature_sets: Vec<Vec<String>> = json_value["metadata"]["cargo-all-features"]
             ["skip_feature_sets"]
             .members()
             .map(|member| {
@@ -74,19 +82,47 @@ impl From<json::JsonValue> for Package {
                     .collect()
             })
             .collect();
-        let skip_optional_dependencies: bool = json_value["metadata"]
-            ["cargo-all-features"]
-            ["skip_optional_dependencies"]
-            .as_bool()
-            .unwrap_or(false);
-        let extra_features: Vec<String> = json_value["metadata"]
-            ["cargo-all-features"]
+        let maybe_skip_optional =
+            json_value["metadata"]["cargo-all-features"]["skip_optional_dependencies"].as_bool();
+        let skip_optional_dependencies: bool = maybe_skip_optional.unwrap_or(false);
+        let extra_features: Vec<String> = json_value["metadata"]["cargo-all-features"]
             ["extra_features"]
             .members()
             .map(|member| member.as_str().unwrap().to_owned())
             .collect();
 
-        Package {
+        let allowlist: Vec<String> = json_value["metadata"]["cargo-all-features"]["allowlist"]
+            .members()
+            .map(|member| member.as_str().unwrap().to_owned())
+            .collect();
+
+        let denylist: HashSet<String> = json_value["metadata"]["cargo-all-features"]["denylist"]
+            .members()
+            .map(|member| member.as_str().unwrap().to_owned())
+            .collect();
+
+        if !allowlist.is_empty() {
+            if !denylist.is_empty() {
+                return Err(format!(
+                    "Package {} has both `allowlist` and `denylist` keys",
+                    name
+                ));
+            }
+            if !extra_features.is_empty() {
+                return Err(format!(
+                    "Package {} has both `allowlist` and `extra_features` keys",
+                    name
+                ));
+            }
+            if maybe_skip_optional.is_some() {
+                return Err(format!(
+                    "Package {} has both `allowlist` and `skip_optional_dependencies` keys",
+                    name
+                ));
+            }
+        }
+
+        Ok(Package {
             id,
             name,
             manifest_path,
@@ -95,7 +131,9 @@ impl From<json::JsonValue> for Package {
             skip_feature_sets,
             skip_optional_dependencies,
             extra_features,
-        }
+            allowlist,
+            denylist,
+        })
     }
 }
 
@@ -106,8 +144,9 @@ pub struct Metadata {
     pub packages: Vec<Package>,
 }
 
-impl From<json::JsonValue> for Metadata {
-    fn from(json_value: json::JsonValue) -> Self {
+impl TryFrom<json::JsonValue> for Metadata {
+    type Error = String;
+    fn try_from(json_value: json::JsonValue) -> Result<Self, String> {
         let workspace_root =
             path::PathBuf::from(json_value["workspace_root"].as_str().unwrap().to_owned());
 
@@ -118,13 +157,13 @@ impl From<json::JsonValue> for Metadata {
 
         let packages = json_value["packages"]
             .members()
-            .map(|member| Package::from(member.to_owned()))
-            .collect();
+            .map(|member| Package::try_from(member.to_owned()))
+            .collect::<Result<_, String>>()?;
 
-        Metadata {
+        Ok(Metadata {
             workspace_root,
             workspace_members,
             packages,
-        }
+        })
     }
 }

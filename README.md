@@ -56,6 +56,13 @@ skip_optional_dependencies = true
 extra_features = [
     "log",
 ]
+
+# Exclude certain features from the build matrix
+denylist = ["foo", "bar"]
+
+# Only include certain features in the build matrix
+#(incompatible with `denylist`, `skip_optional_dependencies`, and `extra_features`)
+allowlist = ["foo", "bar"]
 ```
 
 ## License
