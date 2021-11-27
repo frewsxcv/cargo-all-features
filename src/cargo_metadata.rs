@@ -53,9 +53,9 @@ pub struct Package {
     pub features: FeatureList,
     pub skip_feature_sets: Vec<FeatureList>,
     pub skip_optional_dependencies: bool,
-    pub allowlist: Vec<Feature>,
+    pub allowlist: FeatureList,
     pub denylist: HashSet<Feature>,
-    pub extra_features: Vec<Feature>,
+    pub extra_features: FeatureList,
 }
 
 impl TryFrom<json::JsonValue> for Package {
@@ -88,14 +88,14 @@ impl TryFrom<json::JsonValue> for Package {
         let maybe_skip_optional =
             json_value["metadata"]["cargo-all-features"]["skip_optional_dependencies"].as_bool();
         let skip_optional_dependencies: bool = maybe_skip_optional.unwrap_or(false);
-        let extra_features: Vec<_> = json_value["metadata"]["cargo-all-features"]
+        let extra_features: FeatureList = json_value["metadata"]["cargo-all-features"]
             ["extra_features"]
             .members()
             .map(|member| member.as_str().unwrap().to_owned())
             .map(Feature)
             .collect();
 
-        let allowlist: Vec<_> = json_value["metadata"]["cargo-all-features"]["allowlist"]
+        let allowlist: FeatureList = json_value["metadata"]["cargo-all-features"]["allowlist"]
             .members()
             .map(|member| member.as_str().unwrap().to_owned())
             .map(Feature)
