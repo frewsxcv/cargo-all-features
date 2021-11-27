@@ -1,10 +1,12 @@
+use crate::types::FeatureList;
 use std::{env, error, path, process};
 use termcolor::WriteColor;
 
 pub struct TestRunner {
     command: process::Command,
     crate_name: String,
-    feature_set: Vec<String>,
+    /// A comma separated list of features
+    features: String,
     working_dir: path::PathBuf,
     cargo_command: CargoCommand,
 }
@@ -13,7 +15,7 @@ impl TestRunner {
     pub fn new(
         cargo_command: CargoCommand,
         crate_name: String,
-        feature_set: Vec<String>,
+        feature_set: FeatureList,
         working_dir: path::PathBuf,
     ) -> Self {
         let mut command = process::Command::new(&crate::cargo_cmd());
@@ -25,9 +27,15 @@ impl TestRunner {
         });
         command.arg("--no-default-features");
 
-        if !feature_set.is_empty() {
+        let mut features = feature_set
+            .iter()
+            .fold(String::new(), |s, feature| s + feature + ",");
+
+        if !features.is_empty() {
+            features.remove(features.len() - 1);
+
             command.arg("--features");
-            command.arg(&feature_set.join(","));
+            command.arg(&features);
         }
 
         // Pass through cargo args
@@ -38,7 +46,7 @@ impl TestRunner {
         TestRunner {
             crate_name,
             command,
-            feature_set,
+            features,
             working_dir,
             cargo_command,
         }
@@ -59,11 +67,7 @@ impl TestRunner {
             CargoCommand::Test => print!("     Testing "),
         }
         stdout.reset().unwrap();
-        println!(
-            "crate={} features=[{}]",
-            self.crate_name,
-            self.feature_set.join(", ")
-        );
+        println!("crate={} features=[{}]", self.crate_name, self.features);
 
         let output = self
             .command
