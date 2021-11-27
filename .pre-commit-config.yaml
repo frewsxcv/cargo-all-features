@@ -1,0 +1,47 @@
+default_stages: [ commit ]
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: check-toml
+      - id: check-xml
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: https://github.com/jumanjihouse/pre-commit-hooks
+    rev: 2.1.5
+    hooks:
+      - id: check-mailmap
+      - id: forbid-binary
+      - id: git-check
+      - id: script-must-have-extension
+      - id: script-must-not-have-extension
+      - id: shellcheck
+  - repo: local
+    hooks:
+      - name: format
+        id: format
+        language: system
+        entry: cargo
+        args: [ make, check-format ]
+        types: [ rust ]
+        pass_filenames: false
+      - name: clippy
+        id: clippy
+        language: system
+        entry: cargo
+        args: [ make, clippy ]
+        types: [ rust ]
+        pass_filenames: false
+      - name: clippy-strict
+        id: clippy-strict
+        language: system
+        entry: bash -c "CARGO_MAKE_CLIPPY_ARGS=\"[-- -D warnings]\" cargo make clippy"
+        always_run: true
+        stages: [ push ]
+        pass_filenames: false

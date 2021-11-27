@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+set -euo pipefail
+shopt -s inherit_errexit
+
+function usage() {
+    cat <<USAGE
+    $0  verify that the local dev environment has the necessary tools installed
+USAGE
+}
+
+if [ "$#" -gt 0 ]; then
+    usage
+    exit
+fi
+
+readonly dependencies=(
+  cargo
+  cargo-make
+  cargo-clippy
+  pre-commit
+  shellcheck
+)
+
+function main() {
+  status "Checking dependencies..."
+  check_dependencies
+
+  status "Installing git hooks..."
+  pre-commit install --install-hooks -t pre-commit -t pre-merge-commit \
+    -t pre-push -t prepare-commit-msg -t commit-msg -t post-commit \
+    -t post-checkout -t post-merge
+
+  status "Dev environment is set up!"
+}
+
+function status() {
+  printf "\\n\\n[Status] %s\\n" "$1"
+}
+
+function check_dependencies() {
+  missing=0
+  set +e
+  for dependency in "${dependencies[@]}"; do
+    if ! type "$dependency" >/dev/null 2>/dev/null; then
+      ((missing++))
+      echo >&2 "Missing dependency: $dependency"
+    fi
+  done
+  set -e
+
+  if ((missing)); then
+    exit 1
+  fi
+}
+
+main
