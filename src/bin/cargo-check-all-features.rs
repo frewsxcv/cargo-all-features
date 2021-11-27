@@ -1,12 +1,6 @@
-use std::env;
-use std::error;
+use cargo_all_features::{run, test_runner::CargoCommand};
+use std::error::Error;
 
-fn main() -> Result<(), Box<dyn error::Error>> {
-    if let Some(arg) = env::args().nth(1) {
-        if arg == "--help" {
-            println!("See https://crates.io/crates/cargo-all-features");
-            return Ok(());
-        }
-    }
-    cargo_all_features::run(cargo_all_features::test_runner::CargoCommand::Check)
+fn main() -> Result<(), Box<dyn Error>> {
+    run(CargoCommand::Check)
 }

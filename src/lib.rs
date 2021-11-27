@@ -5,6 +5,13 @@ pub mod features_finder;
 pub mod test_runner;
 
 pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error::Error>> {
+    if let Some(arg) = env::args().nth(1) {
+        if arg == "--help" {
+            println!("See https://crates.io/crates/cargo-all-features");
+            return Ok(());
+        }
+    }
+
     let packages = determine_packages_to_test()?;
 
     for package in packages {
