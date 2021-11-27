@@ -6,9 +6,9 @@ pub fn fetch_feature_sets(package: &crate::cargo_metadata::Package) -> Vec<Vec<S
 
     if package.allowlist.is_empty() {
         if !package.skip_optional_dependencies {
-            features.extend(fetch_optional_dependencies(&package).filter(filter_denylist));
+            features.extend(fetch_optional_dependencies(package).filter(filter_denylist));
         }
-        features.extend(fetch_features(&package).filter(filter_denylist));
+        features.extend(fetch_features(package).filter(filter_denylist));
         features.extend(
             package
                 .extra_features

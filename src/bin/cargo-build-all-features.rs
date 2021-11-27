@@ -2,7 +2,7 @@ use std::env;
 use std::error;
 
 fn main() -> Result<(), Box<dyn error::Error>> {
-    if let Some(arg) = env::args().skip(1).next() {
+    if let Some(arg) = env::args().nth(1) {
         if arg == "--help" {
             println!("See https://crates.io/crates/cargo-all-features");
             return Ok(());
