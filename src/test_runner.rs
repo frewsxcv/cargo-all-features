@@ -1,5 +1,7 @@
 use crate::types::FeatureList;
 use std::{env, error, path, process};
+use strum_macros::AsRefStr;
+use strum_macros::EnumString;
 use termcolor::WriteColor;
 
 pub struct TestRunner {
@@ -20,11 +22,7 @@ impl TestRunner {
     ) -> Self {
         let mut command = process::Command::new(&crate::cargo_cmd());
 
-        command.arg(match cargo_command {
-            CargoCommand::Build => "build",
-            CargoCommand::Check => "check",
-            CargoCommand::Test => "test",
-        });
+        command.arg(cargo_command.as_ref());
         command.arg("--no-default-features");
 
         let mut features = feature_set
@@ -84,9 +82,12 @@ impl TestRunner {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, AsRefStr, EnumString)]
 pub enum CargoCommand {
+    #[strum(serialize = "build")]
     Build,
+    #[strum(serialize = "check")]
     Check,
+    #[strum(serialize = "test")]
     Test,
 }
