@@ -5,8 +5,8 @@ use std::{error, path, process};
 
 pub fn fetch() -> Result<Metadata, Box<dyn error::Error>> {
     let json = fetch_cargo_metadata_json()?;
-    let json_value = json::parse(&json)?;
-    Ok(Metadata::try_from(json_value)?)
+    let json = json::parse(&json)?;
+    Ok(Metadata::try_from(json)?)
 }
 
 fn fetch_cargo_metadata_json() -> Result<String, Box<dyn error::Error>> {
