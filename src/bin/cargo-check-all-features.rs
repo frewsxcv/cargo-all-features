@@ -8,5 +8,5 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             return Ok(());
         }
     }
-    cargo_all_features::run(cargo_all_features::test_runner::CargoCommand::Build)
+    cargo_all_features::run(cargo_all_features::test_runner::CargoCommand::Check)
 }
