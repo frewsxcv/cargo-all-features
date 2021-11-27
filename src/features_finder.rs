@@ -1,4 +1,7 @@
-use crate::types::{Feature, FeatureList};
+use crate::{
+    cargo_metadata::Dependency,
+    types::{Feature, FeatureList},
+};
 use itertools::Itertools;
 
 pub fn fetch_feature_sets(package: &crate::cargo_metadata::Package) -> Vec<FeatureList> {
@@ -50,15 +53,7 @@ fn fetch_optional_dependencies(
     package
         .dependencies
         .iter()
-        .filter(|dependency| dependency.optional)
-        .map(|dependency| {
-            if let Some(name) = &dependency.rename {
-                name.to_string()
-            } else {
-                dependency.name.to_string()
-            }
-        })
-        .map(Feature)
+        .filter_map(Dependency::as_feature)
 }
 
 fn fetch_features(package: &crate::cargo_metadata::Package) -> impl Iterator<Item = Feature> + '_ {
@@ -69,4 +64,13 @@ fn fetch_features(package: &crate::cargo_metadata::Package) -> impl Iterator<Ite
         // Some crates use "__" to indicate internal features
         .filter(|key| !key.starts_with("__"))
         .cloned()
+}
+
+impl Dependency {
+    fn as_feature(&self) -> Option<Feature> {
+        self.optional
+            .then(|| self.rename.as_ref().unwrap_or(&self.name))
+            .cloned()
+            .map(Feature)
+    }
 }
