@@ -5,14 +5,23 @@ pub mod features_finder;
 pub mod test_runner;
 mod types;
 
-pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error::Error>> {
-    if let Some(arg) = env::args().nth(1) {
-        if arg == "--help" {
-            println!("See https://crates.io/crates/cargo-all-features");
-            return Ok(());
-        }
-    }
+pub fn run_deprecated(
+    cargo_command: test_runner::CargoCommand,
+) -> Result<(), Box<dyn error::Error>> {
+    run(cargo_command)?;
+    eprintln!(
+        "********************DEPRECATION NOTICE********************\n\
+        The cargo-all-features crate is switching to using a single\n\
+        binary distribution. The currently executing binary will be\n\
+        removed in a future release. Instead use:\n\
+        \tcargo all-features {}\n\
+        ***********************************************************",
+        cargo_command.as_ref()
+    );
+    Ok(())
+}
 
+pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error::Error>> {
     let packages = determine_packages_to_test()?;
 
     for package in packages {
