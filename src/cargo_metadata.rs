@@ -1,11 +1,12 @@
+use crate::types::{Feature, FeatureList};
 use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::{error, path, process};
 
 pub fn fetch() -> Result<Metadata, Box<dyn error::Error>> {
     let json = fetch_cargo_metadata_json()?;
-    let json_value = json::parse(&json)?;
-    Ok(Metadata::try_from(json_value)?)
+    let json = json::parse(&json)?;
+    Ok(Metadata::try_from(json)?)
 }
 
 fn fetch_cargo_metadata_json() -> Result<String, Box<dyn error::Error>> {
@@ -49,12 +50,12 @@ pub struct Package {
     pub name: String,
     pub manifest_path: path::PathBuf,
     pub dependencies: Vec<Dependency>,
-    pub features: Vec<String>,
-    pub skip_feature_sets: Vec<Vec<String>>,
+    pub features: FeatureList,
+    pub skip_feature_sets: Vec<FeatureList>,
     pub skip_optional_dependencies: bool,
-    pub allowlist: Vec<String>,
-    pub denylist: HashSet<String>,
-    pub extra_features: Vec<String>,
+    pub allowlist: FeatureList,
+    pub denylist: HashSet<Feature>,
+    pub extra_features: FeatureList,
 }
 
 impl TryFrom<json::JsonValue> for Package {
@@ -71,34 +72,39 @@ impl TryFrom<json::JsonValue> for Package {
         let features = json_value["features"]
             .entries()
             .map(|(k, _v)| k.to_owned())
+            .map(Feature)
             .collect();
-        let skip_feature_sets: Vec<Vec<String>> = json_value["metadata"]["cargo-all-features"]
+        let skip_feature_sets: Vec<FeatureList> = json_value["metadata"]["cargo-all-features"]
             ["skip_feature_sets"]
             .members()
             .map(|member| {
                 member
                     .members()
                     .map(|feature| feature.as_str().unwrap().to_owned())
+                    .map(Feature)
                     .collect()
             })
             .collect();
         let maybe_skip_optional =
             json_value["metadata"]["cargo-all-features"]["skip_optional_dependencies"].as_bool();
         let skip_optional_dependencies: bool = maybe_skip_optional.unwrap_or(false);
-        let extra_features: Vec<String> = json_value["metadata"]["cargo-all-features"]
+        let extra_features: FeatureList = json_value["metadata"]["cargo-all-features"]
             ["extra_features"]
             .members()
             .map(|member| member.as_str().unwrap().to_owned())
+            .map(Feature)
             .collect();
 
-        let allowlist: Vec<String> = json_value["metadata"]["cargo-all-features"]["allowlist"]
+        let allowlist: FeatureList = json_value["metadata"]["cargo-all-features"]["allowlist"]
             .members()
             .map(|member| member.as_str().unwrap().to_owned())
+            .map(Feature)
             .collect();
 
-        let denylist: HashSet<String> = json_value["metadata"]["cargo-all-features"]["denylist"]
+        let denylist: HashSet<_> = json_value["metadata"]["cargo-all-features"]["denylist"]
             .members()
             .map(|member| member.as_str().unwrap().to_owned())
+            .map(Feature)
             .collect();
 
         if !allowlist.is_empty() {
