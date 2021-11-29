@@ -1,6 +1,6 @@
-use cargo_all_features::{run_deprecated, test_runner::CargoCommand};
-use std::error::Error;
+mod common;
+use common::*;
 
-fn main() -> Result<(), Box<dyn Error>> {
-    run_deprecated(CargoCommand::Build)
+fn main() -> ! {
+    run_deprecated("build");
 }

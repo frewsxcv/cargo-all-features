@@ -5,22 +5,6 @@ pub mod features_finder;
 pub mod test_runner;
 mod types;
 
-pub fn run_deprecated(
-    cargo_command: test_runner::CargoCommand,
-) -> Result<(), Box<dyn error::Error>> {
-    run(cargo_command)?;
-    eprintln!(
-        "********************DEPRECATION NOTICE********************\n\
-        The cargo-all-features crate is switching to using a single\n\
-        binary distribution. The currently executing binary will be\n\
-        removed in a future release. Instead use:\n\
-        \tcargo all-features {}\n\
-        ***********************************************************",
-        cargo_command.as_ref()
-    );
-    Ok(())
-}
-
 pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error::Error>> {
     let packages = determine_packages_to_test()?;
 
