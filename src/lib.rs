@@ -2,8 +2,8 @@ use std::{env, error, ffi, process};
 
 pub mod cargo_metadata;
 pub mod features_finder;
-mod types;
 pub mod test_runner;
+mod types;
 
 pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error::Error>> {
     if let Some(arg) = env::args().nth(1) {
@@ -31,6 +31,8 @@ fn test_all_features_for_package(
     command: crate::test_runner::CargoCommand,
 ) -> Result<TestOutcome, Box<dyn error::Error>> {
     let feature_sets = crate::features_finder::fetch_feature_sets(package);
+
+    println!("{:?}", feature_sets);
 
     for feature_set in feature_sets {
         let mut test_runner = crate::test_runner::TestRunner::new(

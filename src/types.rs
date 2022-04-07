@@ -1,6 +1,5 @@
 /// This mod contains newtype structs [`Feature`] and [`FeatureList`], they are
 /// transparent wrappers around [`String`] and [`Vec<String>`].
-
 use std::{
     convert::{AsMut, AsRef},
     iter::FromIterator,
