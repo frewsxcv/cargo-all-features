@@ -2,8 +2,8 @@ use std::{env, error, ffi, process};
 
 pub mod cargo_metadata;
 pub mod features_finder;
-mod types;
 pub mod test_runner;
+mod types;
 
 pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error::Error>> {
     if let Some(arg) = env::args().nth(1) {

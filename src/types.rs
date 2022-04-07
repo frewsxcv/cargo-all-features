@@ -1,6 +1,5 @@
 /// This mod contains newtype structs [`Feature`] and [`FeatureList`], they are
 /// transparent wrappers around [`String`] and [`Vec<String>`].
-
 use std::{
     convert::{AsMut, AsRef},
     iter::FromIterator,
@@ -8,11 +7,11 @@ use std::{
 };
 
 /// A transparent wrapper around [`Vec<String>`]
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct FeatureList(pub(crate) Vec<Feature>);
 
 /// A transparent wrapper around [`String`]
-#[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct Feature(pub(crate) String);
 
 impl FromIterator<Feature> for FeatureList {

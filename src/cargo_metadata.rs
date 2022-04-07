@@ -1,5 +1,5 @@
 use crate::types::{Feature, FeatureList};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::{error, path, process};
 
@@ -51,6 +51,7 @@ pub struct Package {
     pub manifest_path: path::PathBuf,
     pub dependencies: Vec<Dependency>,
     pub features: FeatureList,
+    pub feature_map: HashMap<String, FeatureList>,
     pub skip_feature_sets: Vec<FeatureList>,
     pub skip_optional_dependencies: bool,
     pub allowlist: FeatureList,
@@ -73,6 +74,15 @@ impl TryFrom<json::JsonValue> for Package {
             .entries()
             .map(|(k, _v)| k.to_owned())
             .map(Feature)
+            .collect();
+        let feature_map = json_value["features"]
+            .entries()
+            .map(|(k, v)| {
+                (
+                    k.to_owned(),
+                    FeatureList(v.members().map(|v| Feature(v.to_string())).collect()),
+                )
+            })
             .collect();
         let skip_feature_sets: Vec<FeatureList> = json_value["metadata"]["cargo-all-features"]
             ["skip_feature_sets"]
@@ -134,6 +144,7 @@ impl TryFrom<json::JsonValue> for Package {
             manifest_path,
             dependencies,
             features,
+            feature_map,
             skip_feature_sets,
             skip_optional_dependencies,
             extra_features,
