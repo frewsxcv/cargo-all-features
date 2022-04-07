@@ -32,8 +32,6 @@ fn test_all_features_for_package(
 ) -> Result<TestOutcome, Box<dyn error::Error>> {
     let feature_sets = crate::features_finder::fetch_feature_sets(package);
 
-    println!("{:?}", feature_sets);
-
     for feature_set in feature_sets {
         let mut test_runner = crate::test_runner::TestRunner::new(
             command,
