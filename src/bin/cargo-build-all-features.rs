@@ -1,6 +1,6 @@
-use cargo_all_features::{run, test_runner::CargoCommand};
-use std::error::Error;
+use cargo_all_features::runner::CargoCommand;
+mod common;
 
-fn main() -> Result<(), Box<dyn Error>> {
-    run(CargoCommand::Build)
+fn main() {
+    common::deprecated_glue::run(CargoCommand::Build);
 }

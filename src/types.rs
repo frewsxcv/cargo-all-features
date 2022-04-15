@@ -6,16 +6,20 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
+use serde::Deserialize;
+
 /// A transparent wrapper around [`Vec<String>`]
-#[derive(Default, Clone, Debug)]
-pub struct FeatureList(pub(crate) Vec<Feature>);
+#[derive(Default, Clone, Debug, Deserialize)]
+pub struct FeatureList<T = String>(pub(crate) Vec<T>);
 
-/// A transparent wrapper around [`String`]
-#[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
-pub struct Feature(pub(crate) String);
+impl FromIterator<String> for FeatureList {
+    fn from_iter<T: IntoIterator<Item = String>>(iter: T) -> Self {
+        FeatureList(iter.into_iter().collect())
+    }
+}
 
-impl FromIterator<Feature> for FeatureList {
-    fn from_iter<T: IntoIterator<Item = Feature>>(iter: T) -> Self {
+impl<'a> FromIterator<&'a String> for FeatureList<&'a String> {
+    fn from_iter<T: IntoIterator<Item = &'a String>>(iter: T) -> Self {
         FeatureList(iter.into_iter().collect())
     }
 }
@@ -38,36 +42,38 @@ impl DerefMut for FeatureList {
     }
 }
 
+impl<'a> DerefMut for FeatureList<&'a String> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl<'a> DerefMut for FeatureList<&'a &'a String> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl<'a> Deref for FeatureList<&'a &'a String> {
+    type Target = Vec<&'a &'a String>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<'a> Deref for FeatureList<&'a String> {
+    type Target = Vec<&'a String>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 impl Deref for FeatureList {
-    type Target = Vec<Feature>;
+    type Target = Vec<String>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
-    }
-}
-
-impl AsRef<str> for &Feature {
-    fn as_ref(&self) -> &str {
-        self.deref()
-    }
-}
-
-impl Deref for Feature {
-    type Target = str;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<S: AsRef<str>> PartialEq<S> for Feature {
-    fn eq(&self, other: &S) -> bool {
-        self.as_ref() == other.as_ref()
-    }
-}
-
-impl PartialEq<str> for &Feature {
-    fn eq(&self, other: &str) -> bool {
-        self.as_ref() == other
     }
 }
