@@ -1,6 +1,7 @@
-use std::process::{Command, Stdio};
-
 use crate::Errors;
+use rayon::prelude::*;
+use std::process::{Command, Stdio};
+use which::which;
 
 #[derive(Debug)]
 pub struct RustUpToolchain {
@@ -9,11 +10,19 @@ pub struct RustUpToolchain {
 }
 
 impl RustUpToolchain {
+    // Get value of `CARGO` env variable at runtime or use `cargo`
+    pub fn cargo_cmd() -> String {
+        std::env::var("CARGO").unwrap_or_else(|_| String::from("cargo"))
+    }
+
+    // List installed component of toolchain
     pub fn installed_components(&self) -> Result<Vec<String>, Errors> {
-        if which::which("rustup").is_err() {
-            return Err(Errors::RustUpNotFound);
+        // Checking if `rustup` is available
+        if which("rustup").is_err() {
+            return Errors::RustUpNotFound.into();
         }
 
+        // Running `rustup +<toolchain> component list --installed`
         let output = Command::new("rustup")
             .args(&[
                 format!("+{}-{}", self.channel, self.triplet),
@@ -24,46 +33,60 @@ impl RustUpToolchain {
             .stderr(Stdio::inherit())
             .output()?;
 
+        // Parse output of command
         match String::from_utf8(output.stdout) {
             Ok(value) => {
-                let mut components = vec![];
-                for line in value.split('\n') {
-                    let parts: Vec<&str> = line.split(&format!("-{}", self.triplet)).collect();
-                    if !parts.is_empty() && !parts[0].trim().is_empty() {
-                        components.push(parts[0].to_owned())
-                    }
-                }
+                // Split at each new line and parse each line as `<component>-<toolchain>..`
+                let components = value
+                    .par_split('\n')
+                    .filter_map(|line| {
+                        let parts: Vec<&str> = line.split(&format!("-{}", self.triplet)).collect();
+                        if !parts.is_empty() && !parts[0].trim().is_empty() {
+                            Some(parts[0].to_owned())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+
                 Ok(components)
             }
-            Err(error) => Err(Errors::FailedToParseOutputOfCommand { error }),
+            Err(error) => Errors::FailedToParseOutputOfCommand { error }.into(),
         }
     }
 
+    // Parse RustUps active toolchain
     pub fn active_toolchain() -> Result<Self, Errors> {
-        if which::which("rustup").is_err() {
-            return Err(Errors::RustUpNotFound);
+        // Checking if `rustup` is available
+        if which("rustup").is_err() {
+            return Errors::RustUpNotFound.into();
         }
 
+        // running `rustup show active-toolchain`
         let output = Command::new("rustup")
             .args(&["show", "active-toolchain"])
             .stderr(Stdio::inherit())
             .output()?;
 
+        // Parse output of command
         match String::from_utf8(output.stdout) {
+            // Split at whitespace as output will be `<channel_or_version>-<triplet> (<reason>)`
             Ok(value) => match value.split_whitespace().next() {
                 Some(value) => {
-                    let parts: Vec<&str> = value.split('-').collect();
+                    // Split channel or version from triplet
+                    let parts: Vec<&str> = value.par_split('-').collect();
 
                     Ok(Self {
                         channel: parts[0].to_owned(),
                         triplet: parts[1..].join("-"),
                     })
                 }
-                None => Err(Errors::FailedToParseActiveToolchain {
+                None => Errors::FailedToParseActiveToolchain {
                     output: value.to_owned(),
-                }),
+                }
+                .into(),
             },
-            Err(error) => Err(Errors::FailedToParseOutputOfCommand { error }),
+            Err(error) => Errors::FailedToParseOutputOfCommand { error }.into(),
         }
     }
 }

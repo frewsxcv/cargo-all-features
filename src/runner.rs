@@ -1,4 +1,4 @@
-use crate::{cargo_cmd, types::FeatureList, Errors, TestOutcome};
+use crate::{toolchain::RustUpToolchain, types::FeatureList, Errors, Options, Outcome};
 use clap::ArgEnum;
 use itertools::Itertools;
 use std::{
@@ -6,7 +6,7 @@ use std::{
     path::Path,
     process::{Command, Stdio},
 };
-use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
+use yansi::Paint;
 
 pub struct Runner<'a> {
     cargo_command: &'a CargoCommand,
@@ -15,19 +15,23 @@ pub struct Runner<'a> {
     /// A comma separated list of features
     features: String,
     working_dir: &'a Path,
+    options: Option<&'a Options>,
 }
 
 impl<'a> Runner<'a> {
     pub fn new(
         cargo_command: &'a CargoCommand,
         crate_name: &'a str,
-        feature_set: FeatureList<&'a String>,
+        feature_set: &'a FeatureList<&'a String>,
         working_dir: &'a Path,
         arguments: &[String],
+        options: Option<&'a Options>,
     ) -> Self {
         let features = feature_set.iter().join(",");
 
-        let mut command = Command::new(cargo_cmd());
+        // Building command `cargo <command> --no-default-features --features <features> <..arguments>`
+        let mut command = Command::new(if !options.map(|e|e.cross).unwrap_or(false){RustUpToolchain::cargo_cmd()} else {"cross".to_string()});
+        command.arg("+nightly");
         command.args(cargo_command.to_cargo_arguments());
         command.args(&["--no-default-features"]);
 
@@ -41,24 +45,41 @@ impl<'a> Runner<'a> {
             command.args(arguments.iter().map(OsStr::new));
         }
 
+        if let Some(options) = options {
+            if options.no_color {
+                command.args(&["--color=never"]);
+            }
+
+            if options.verbose {
+                println!("    {} {:?}", Paint::blue("Running").bold(), command);
+            }
+        }
+
         Runner {
             crate_name,
             command,
             features,
             working_dir,
             cargo_command,
+            options,
         }
     }
 
-    pub fn run(&mut self) -> Result<TestOutcome, Errors> {
-        let mut stdout = StandardStream::stdout(ColorChoice::Auto);
-        stdout
-            .set_color(ColorSpec::new().set_fg(Some(Color::Cyan)).set_bold(true))
-            .unwrap();
-        print!("{}", self.cargo_command.as_label());
-        stdout.reset().unwrap();
-        println!("crate={} features=[{}]", self.crate_name, self.features);
+    pub fn run(&mut self) -> Result<Outcome, Errors> {
+        println!(
+            "{} crate={} features=[{}]",
+            Paint::cyan(self.cargo_command.as_label()).bold(),
+            self.crate_name,
+            self.features
+        );
 
+        if let Some(options) = self.options {
+            if options.dry_run {
+                return Ok(Outcome::Pass);
+            }
+        }
+
+        // Running command in work directory
         let output = self
             .command
             .stdout(Stdio::inherit())
@@ -67,9 +88,9 @@ impl<'a> Runner<'a> {
             .output()?;
 
         Ok(if output.status.success() {
-            TestOutcome::Pass
+            Outcome::Pass
         } else {
-            TestOutcome::Fail(output.status)
+            Outcome::Fail(output.status)
         })
     }
 }
@@ -96,9 +117,11 @@ pub enum CargoCommand {
     MiriTest,
     Udeps,
     Tarpaulin,
+    Nextest,
 }
 
 impl CargoCommand {
+    // Command arguments to add to cargo, `cargo <..to_cargo_arguments> ..`
     pub fn to_cargo_arguments(&self) -> &[&'static str] {
         match self {
             Self::Build => &["build"],
@@ -108,9 +131,11 @@ impl CargoCommand {
             Self::MiriTest => &["miri", "test"],
             Self::Udeps => &["udeps"],
             Self::Tarpaulin => &["tarpaulin"],
+            Self::Nextest => &["nextest", "run"],
         }
     }
 
+    // Label shown in stdout
     fn as_label(&self) -> &'static str {
         match self {
             Self::Build => "    Building ",
@@ -120,6 +145,7 @@ impl CargoCommand {
             Self::MiriTest => "     Testing with Miri ",
             Self::Udeps => "     Analyzing with Udeps ",
             Self::Tarpaulin => "     Testing with Tarpaulin ",
+            Self::Nextest => "     Testing with NexTest ",
         }
     }
 }

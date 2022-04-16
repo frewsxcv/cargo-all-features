@@ -1,66 +1,22 @@
-use crate::runner::{CargoCommand, Runner};
-use rayon::iter::ParallelIterator;
-use serde::Deserialize;
-
+use super::Dependency;
+use crate::metadata::CargoAllFeatures;
+use crate::runner::Runner;
 use crate::types::FeatureList;
-use crate::{Errors, TestOutcome};
+use crate::CargoCommand;
+use crate::Errors;
+use crate::Options;
+use crate::Outcome;
 use itertools::Itertools;
 use rayon::prelude::*;
-use std::collections::{HashMap, HashSet};
-use std::env;
-use std::path::PathBuf;
-use std::{
-    path,
-    process::{Command, Stdio},
-};
-use validator::{Validate, ValidationError};
-
-pub struct MetaTree {
-    meta_data: MetaData,
-}
-
-impl MetaTree {
-    pub fn new() -> Result<Self, Errors> {
-        let mut command = Command::new(crate::cargo_cmd());
-
-        command.args(&["metadata", "--format-version", "1"]);
-
-        let output = command.stderr(Stdio::inherit()).output()?;
-
-        if !output.status.success() {
-            return Err(Errors::CargoMetaDataNonZeroStatus {
-                status: output.status,
-            });
-        }
-
-        let meta_data: MetaData = serde_json::from_slice(&output.stdout)?;
-
-        for package in &meta_data.packages {
-            package.validate()?
-        }
-
-        Ok(Self { meta_data })
-    }
-
-    pub fn meta_data(&self) -> &MetaData {
-        &self.meta_data
-    }
-}
-
-#[derive(Clone, Deserialize)]
-pub struct Dependency {
-    pub name: String,
-    pub rename: Option<String>,
-    pub optional: bool,
-}
-
-impl<'a> From<&'a Dependency> for Option<&'a String> {
-    fn from(dependency: &'a Dependency) -> Self {
-        dependency
-            .optional
-            .then(|| dependency.rename.as_ref().unwrap_or(&dependency.name))
-    }
-}
+use serde::Deserialize;
+use std::collections::hash_map::DefaultHasher;
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::hash::Hash;
+use std::path;
+use validator::Validate;
+use validator::ValidationError;
+use std::hash::Hasher;
 
 #[derive(Clone, Deserialize, Validate)]
 #[validate(schema(function = "Self::validate"))]
@@ -75,6 +31,7 @@ pub struct Package {
 }
 
 impl Package {
+    // Validation used by validator
     pub fn validate(&self) -> Result<(), ValidationError> {
         if let Some(config) = &self.cargo_all_features {
             if let Some(allow_ist) = &config.allowlist {
@@ -113,12 +70,14 @@ impl Package {
         Ok(())
     }
 
+    // Fetches optional dependencies
     fn optional_dependencies(&self) -> impl ParallelIterator<Item = &String> + '_ {
         self.dependencies
             .par_iter()
             .filter_map(Option::<&String>::from)
     }
 
+    // Fetches features from feature_map
     fn features(&self) -> impl ParallelIterator<Item = &String> {
         self.features
             .par_iter()
@@ -128,9 +87,11 @@ impl Package {
             .map(|e| e.0)
     }
 
+    // Fetch features sets
     pub fn feature_sets(&self) -> Vec<FeatureList<&String>> {
         let mut features = vec![];
 
+        // Closure to check if is in deny list
         let filter_denylist = |f: &String| {
             self.cargo_all_features
                 .as_ref()
@@ -162,6 +123,8 @@ impl Package {
             }
         }
 
+        // Clippy screams due to the `.map` and `.unwrap_or` as they seem complex
+        #[allow(clippy::blocks_in_if_conditions)]
         if self
             .cargo_all_features
             .as_ref()
@@ -239,65 +202,93 @@ impl Package {
         feature_sets
     }
 
+    // Run command on current package for all features
     pub fn run_on_all_features(
         &self,
         command: &CargoCommand,
         arguments: &[String],
-    ) -> Result<TestOutcome, Errors> {
-        for feature_set in self.feature_sets() {
-            let outcome = Runner::new(
-                command,
-                &self.name,
-                feature_set,
-                self.manifest_path
-                    .parent()
-                    .expect("could not find parent of cargo manifest path"),
-                arguments,
-            )
-            .run()?;
+        options: Option<&Options>,
+    ) -> Result<Outcome, Errors> {
+        // Closure to execute command on feature sets
+        let run = |chunked_feature_sets: std::slice::Iter<FeatureList<&String>>| {
+            for feature_set in chunked_feature_sets {
+                let mut runner = Runner::new(
+                    command,
+                    &self.name,
+                    feature_set,
+                    self.manifest_path
+                        .parent()
+                        .expect("could not find parent of cargo manifest path"),
+                    arguments,
+                    options,
+                );
 
-            match outcome {
-                TestOutcome::Pass => (),
-                // Fail fast if we encounter a test failure
-                t @ TestOutcome::Fail(_) => return Ok(t),
+                match runner.run()? {
+                    Outcome::Pass => (),
+                    // Fail fast if we encounter a test failure
+                    t @ Outcome::Fail(_) => return Ok(t),
+                }
             }
+
+            // If everything goes well, pass
+            Ok(Outcome::Pass)
+        };
+
+        // Simple function to calculate hash
+        fn calculate_hash<T: Hash>(t: &T) -> u64 {
+            let mut s = DefaultHasher::new();
+            t.hash(&mut s);
+            s.finish()
         }
 
-        Ok(TestOutcome::Pass)
-    }
-}
+        // Get feature sets and sort their lists
+        let mut feature_sets: Vec<_> = self
+            .feature_sets()
+            .into_par_iter()
+            .map(|mut e| {
+                e.par_sort_by(|a, b| calculate_hash(b).cmp(&calculate_hash(a)));
+                e
+            })
+            .collect();
 
-#[derive(Clone, Deserialize, Validate)]
-pub struct CargoAllFeatures {
-    pub skip_feature_sets: Option<Vec<FeatureList>>,
-    pub skip_optional_dependencies: Option<bool>,
-    pub extra_features: Option<FeatureList>,
-    pub allowlist: Option<FeatureList>,
-    pub denylist: Option<HashSet<String>>,
-}
+        // Sort feature sets
+        feature_sets.par_sort_by(|a, b| calculate_hash(&b.0).cmp(&calculate_hash(&a.0)));
 
-#[derive(Clone, Deserialize)]
-pub struct MetaData {
-    pub workspace_root: PathBuf,
-    pub workspace_members: Vec<String>,
-    pub packages: Vec<Package>,
-}
+        // Either use chunks
+        if let Some(options) = options {
+            if let Some(chunk) = options.chunk {
+                if let Some(chunks) = options.chunks {
+                    if feature_sets.len() >= chunks && chunk <= chunks {
+                        // Checks how many for each chunk
+                        let len = feature_sets.len();
+                        let (quo, rem) = (len / chunks, len % chunks);
 
-impl<'a> MetaData {
-    pub fn determine_packages_to_run_on(&'a self) -> Result<Vec<&'a Package>, Errors> {
-        let current_dir = env::current_dir()?;
+                        // Get items for current chunk
+                        let mut items = feature_sets
+                            .chunks(quo)
+                            .collect::<Vec<_>>()
+                            .get(chunk - 1)
+                            .unwrap()
+                            .to_vec();
 
-        Ok(if current_dir == self.workspace_root {
-            self.packages
-                .par_iter()
-                .filter(|package| self.workspace_members.contains(&package.id))
-                .collect::<Vec<_>>()
-        } else {
-            vec![self
-                .packages
-                .par_iter()
-                .find_any(|package| package.manifest_path.parent() == Some(&current_dir))
-                .expect("Could not find cargo package in metadata")]
-        })
+                        // Check if there are remaining ones, if so adds 1
+                        if chunk <= rem {
+                            items.push(
+                                feature_sets[(chunks * quo)..]
+                                    .get(chunk - 1)
+                                    .unwrap()
+                                    .to_owned(),
+                            );
+                        }
+
+                        return run(items.iter());
+                    } else {
+                        // TODO Error
+                    }
+                }
+            }
+        }
+        // Else just run on all
+        return run(feature_sets.iter());
     }
 }

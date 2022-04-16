@@ -9,7 +9,7 @@ use std::{
 use serde::Deserialize;
 
 /// A transparent wrapper around [`Vec<String>`]
-#[derive(Default, Clone, Debug, Deserialize)]
+#[derive(Default, Clone, Debug, Deserialize, Ord, PartialOrd, Eq, PartialEq)]
 pub struct FeatureList<T = String>(pub(crate) Vec<T>);
 
 impl FromIterator<String> for FeatureList {
