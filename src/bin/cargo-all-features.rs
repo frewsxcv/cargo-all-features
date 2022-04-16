@@ -1,4 +1,9 @@
-use cargo_all_features::{runner::CargoCommand, Options};
+#![forbid(unsafe_code)]
+#![deny(clippy::all)]
+
+use std::process;
+
+use cargo_all_features::{runner::CargoCommand, toolchain::CommandTarget, Options};
 use clap::{crate_authors, crate_description, crate_version, Parser, Subcommand};
 use yansi::Paint;
 
@@ -31,16 +36,11 @@ struct Cli {
     )]
     pub verbose: bool,
 
-    #[clap(
-        long,
-        short,
-        help = "If enabled will use cross instead of cargo"
-    )]
-    pub cross: bool,
-
-
     #[clap(arg_enum)]
     pub command: CargoCommand,
+
+    #[clap(arg_enum, long)]
+    pub command_target: Option<CommandTarget>,
 
     #[clap(subcommand)]
     pub flags_and_options: Option<FlagsAndOptions>,
@@ -53,8 +53,13 @@ enum FlagsAndOptions {
 }
 
 // Runs the command and prints out in rust known error format
-fn run_command(command: CargoCommand, args: &[String], options: Option<Options>) {
-    if let Err(error) = cargo_all_features::run(command, args, options) {
+fn run_command(
+    command: CargoCommand,
+    args: &[String],
+    options: Option<Options>,
+    command_target: CommandTarget,
+) {
+    if let Err(error) = cargo_all_features::run(command, args, options, command_target) {
         println!("{}: {}", Paint::red("error").bold(), error);
     }
 }
@@ -64,7 +69,7 @@ pub fn main() {
     // Name of the cargo subcommand
     let name: String = env!("CARGO_BIN_NAME").replace("cargo-", "");
 
-    // Checking if command is used via cargo or as binary (such as using cargo build --bin all-features)
+    // Checking if command is used via cargo or as binary (such as using cargo build --bin all-features
     let arguments = std::env::args().skip(
         if std::env::args().nth(1).unwrap_or_else(|| "".to_string()) == name {
             1
@@ -81,12 +86,9 @@ pub fn main() {
         no_color: args.no_color,
         dry_run: args.dry_run,
         verbose: args.verbose,
-        cross: args.cross,
         chunks: None,
         chunk: None,
     };
-
-    // TODO check if cross is installed, but in library
 
     // Only if chunk and chunks are set
     if args.chunks.is_some() && args.chunk.is_some() {
@@ -99,14 +101,23 @@ pub fn main() {
         Paint::disable();
     }
 
+    // Default to cargo
+    let command_target = args.command_target.unwrap_or(CommandTarget::Cargo);
+
+    // checking if cross is installed
+    if command_target == CommandTarget::Cross && which::which("cross").is_err() {
+        println!("{}: Could not find `cross` installed. To install it run `cargo install cross` or header over to https://github.com/cross-rs/cross for more information", Paint::red("error").bold());
+        process::exit(127);
+    }
+
     // Either run with additional flags and subcommands or without
     if let Some(external_command) = args.flags_and_options {
         match external_command {
             FlagsAndOptions::External(commands) => {
-                run_command(args.command, &commands, Some(options));
+                run_command(args.command, &commands, Some(options), command_target);
             }
         }
     } else {
-        run_command(args.command, &[], Some(options));
+        run_command(args.command, &[], Some(options), command_target);
     }
 }

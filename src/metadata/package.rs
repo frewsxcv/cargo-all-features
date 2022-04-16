@@ -1,6 +1,7 @@
 use super::Dependency;
 use crate::metadata::CargoAllFeatures;
 use crate::runner::Runner;
+use crate::toolchain::CommandTarget;
 use crate::types::FeatureList;
 use crate::CargoCommand;
 use crate::Errors;
@@ -13,10 +14,10 @@ use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::hash::Hash;
+use std::hash::Hasher;
 use std::path;
 use validator::Validate;
 use validator::ValidationError;
-use std::hash::Hasher;
 
 #[derive(Clone, Deserialize, Validate)]
 #[validate(schema(function = "Self::validate"))]
@@ -208,6 +209,7 @@ impl Package {
         command: &CargoCommand,
         arguments: &[String],
         options: Option<&Options>,
+        command_target: &CommandTarget,
     ) -> Result<Outcome, Errors> {
         // Closure to execute command on feature sets
         let run = |chunked_feature_sets: std::slice::Iter<FeatureList<&String>>| {
@@ -221,6 +223,7 @@ impl Package {
                         .expect("could not find parent of cargo manifest path"),
                     arguments,
                     options,
+                    command_target,
                 );
 
                 match runner.run()? {
@@ -283,7 +286,12 @@ impl Package {
 
                         return run(items.iter());
                     } else {
-                        // TODO Error
+                        return Errors::InvalidChunkInputs {
+                            feature_sets: feature_sets.len(),
+                            chunks,
+                            chunk,
+                        }
+                        .into();
                     }
                 }
             }

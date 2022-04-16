@@ -98,6 +98,11 @@ If you are not sure if the correct command are executed use `--verbose`
 Don't mind to use `+<toolchain>` or any other combination of rustups toolchain selection. `cargo-all-features` will pick up on the active toolchain and use it.
 
 > for more information run `cargo all-features --help`
+
+### Cross
+> If you never heard of [cross](https://github.com/cross-rs/cross), an almost zero setup cross compilation cli setup
+
+While there is no way to directly know if you are calling this cargo subcommand from cross, there is a `--target-command` flag which can be set to `cross` which will forward the feature flags to `cross` instead of `cargo`
 </details>
 
 ## Why?

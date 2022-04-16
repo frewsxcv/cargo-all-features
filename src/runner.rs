@@ -1,4 +1,8 @@
-use crate::{toolchain::RustUpToolchain, types::FeatureList, Errors, Options, Outcome};
+use crate::{
+    toolchain::{CommandTarget, RustUpToolchain},
+    types::FeatureList,
+    Errors, Options, Outcome,
+};
 use clap::ArgEnum;
 use itertools::Itertools;
 use std::{
@@ -26,12 +30,12 @@ impl<'a> Runner<'a> {
         working_dir: &'a Path,
         arguments: &[String],
         options: Option<&'a Options>,
+        command_target: &CommandTarget,
     ) -> Self {
         let features = feature_set.iter().join(",");
 
         // Building command `cargo <command> --no-default-features --features <features> <..arguments>`
-        let mut command = Command::new(if !options.map(|e|e.cross).unwrap_or(false){RustUpToolchain::cargo_cmd()} else {"cross".to_string()});
-        command.arg("+nightly");
+        let mut command = Command::new(RustUpToolchain::cargo_cmd(command_target));
         command.args(cargo_command.to_cargo_arguments());
         command.args(&["--no-default-features"]);
 
@@ -51,7 +55,11 @@ impl<'a> Runner<'a> {
             }
 
             if options.verbose {
-                println!("    {} {:?}", Paint::blue("Running").bold(), command);
+                println!(
+                    "    {} {}",
+                    Paint::blue("Running").bold(),
+                    format!("{:?}", command).replace('\"', "")
+                );
             }
         }
 

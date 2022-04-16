@@ -1,4 +1,4 @@
-use crate::toolchain::RustUpToolchain;
+use crate::toolchain::{CommandTarget, RustUpToolchain};
 use crate::Errors;
 use std::process::{Command, Stdio};
 
@@ -20,7 +20,8 @@ pub struct MetaTree {
 impl MetaTree {
     // Parses the output of `cargo metadata` and validates the config of `cargo-all-features`
     pub fn new() -> Result<Self, Errors> {
-        let mut command = Command::new(RustUpToolchain::cargo_cmd());
+        // Use cargo for metadata resolution
+        let mut command = Command::new(RustUpToolchain::cargo_cmd(&CommandTarget::Cargo));
 
         command.args(&["metadata", "--format-version", "1"]);
 

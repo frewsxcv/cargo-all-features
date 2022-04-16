@@ -1,3 +1,6 @@
+#![forbid(unsafe_code)]
+#![deny(clippy::all)]
+
 use cargo_all_features::runner::CargoCommand;
 mod common;
 fn main() {

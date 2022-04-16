@@ -1,4 +1,4 @@
-use cargo_all_features::{run as run_main, runner::CargoCommand};
+use cargo_all_features::{run as run_main, runner::CargoCommand, toolchain::CommandTarget};
 use yansi::Paint;
 
 // Glue code to run `cargo build-all-features`, etc. with same logic as `cargo all-features build`
@@ -20,7 +20,7 @@ pub fn run(command: CargoCommand) {
         name
     );
 
-    if let Err(error) = run_main(command, &arguments, None) {
+    if let Err(error) = run_main(command, &arguments, None, CommandTarget::Cargo) {
         println!("{}: {}", Paint::red("error").bold(), error);
     }
 }

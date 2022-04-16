@@ -9,6 +9,7 @@ use rayon::iter::IntoParallelRefIterator;
 use rayon::prelude::*;
 use runner::CargoCommand;
 use std::process;
+use toolchain::CommandTarget;
 use which::which;
 
 pub mod constants;
@@ -30,13 +31,13 @@ pub struct Options {
     pub no_color: bool,
     pub verbose: bool,
     pub dry_run: bool,
-    pub cross: bool,
 }
 
 pub fn run(
     cargo_command: CargoCommand,
     arguments: &[String],
     options: Option<Options>,
+    command_target: CommandTarget,
 ) -> Result<(), Box<Errors>> {
     // Checks if any of the forbidden flags were used
     let used_forbidden_flags = FORBIDDEN_FLAGS
@@ -117,7 +118,12 @@ pub fn run(
     // Checks which packages are in current scope
     for package in meta_tree.meta_data().determine_packages_to_run_on()? {
         // Runs the command on all feature sets
-        let outcome = package.run_on_all_features(&cargo_command, arguments, options.as_ref())?;
+        let outcome = package.run_on_all_features(
+            &cargo_command,
+            arguments,
+            options.as_ref(),
+            &command_target,
+        )?;
 
         if let Outcome::Fail(exit_status) = outcome {
             process::exit(exit_status.code().unwrap());

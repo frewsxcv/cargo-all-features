@@ -1,7 +1,14 @@
 use crate::Errors;
+use clap::ArgEnum;
 use rayon::prelude::*;
 use std::process::{Command, Stdio};
 use which::which;
+
+#[derive(ArgEnum, Clone, Debug, PartialEq)]
+pub enum CommandTarget {
+    Cargo,
+    Cross,
+}
 
 #[derive(Debug)]
 pub struct RustUpToolchain {
@@ -11,8 +18,13 @@ pub struct RustUpToolchain {
 
 impl RustUpToolchain {
     // Get value of `CARGO` env variable at runtime or use `cargo`
-    pub fn cargo_cmd() -> String {
-        std::env::var("CARGO").unwrap_or_else(|_| String::from("cargo"))
+    pub fn cargo_cmd(target: &CommandTarget) -> String {
+        match target {
+            CommandTarget::Cargo => {
+                std::env::var("CARGO").unwrap_or_else(|_| String::from("cargo"))
+            }
+            CommandTarget::Cross => String::from("cross"),
+        }
     }
 
     // List installed component of toolchain
@@ -75,7 +87,7 @@ impl RustUpToolchain {
                 Some(value) => {
                     // Split channel or version from triplet
                     let parts: Vec<&str> = value.par_split('-').collect();
-
+                    println!("{:?}", parts);
                     Ok(Self {
                         channel: parts[0].to_owned(),
                         triplet: parts[1..].join("-"),

@@ -41,6 +41,11 @@ pub enum Errors {
         chunk: usize,
         chunks: usize,
     },
+    InvalidChunkInputs {
+        chunk: usize,
+        chunks: usize,
+        feature_sets: usize,
+    },
     RustUpNotFound,
     IoError(io::Error),
     ValidationFailed(ValidationError),
@@ -168,6 +173,13 @@ impl Display for Errors {
             }
             Self::InvalidChunkNumber { chunk, chunks } => {
                 write!(f, "the input --chunks was {} and the current chunk number (--chunk) was {}. the chunk number is not allowed to be bigger than the total amount of chunks and not smaller then 1", chunks, chunk)
+            }
+            Self::InvalidChunkInputs {
+                chunks,
+                chunk,
+                feature_sets,
+            } => {
+                write!(f, "got invalid chunking input. not more then {} chunks allowed for this crate, chunk number ({}) is not allowed to be higher then the total chunk count ({})", feature_sets, chunk, chunks)
             }
         }
     }
