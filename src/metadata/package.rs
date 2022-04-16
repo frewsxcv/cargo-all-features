@@ -16,54 +16,49 @@ use std::collections::HashSet;
 use std::hash::Hash;
 use std::hash::Hasher;
 use std::path;
-use validator::Validate;
-use validator::ValidationError;
 
-#[derive(Clone, Deserialize, Validate)]
-#[validate(schema(function = "Self::validate"))]
+#[derive(Clone, Deserialize, Debug)]
 pub struct Package {
     pub id: String,
     pub name: String,
     pub manifest_path: path::PathBuf,
     pub dependencies: Vec<Dependency>,
     pub features: HashMap<String, FeatureList>,
+    pub metadata: Option<PackageMetaData>,
+}
+
+#[derive(Clone, Deserialize, Debug)]
+pub struct PackageMetaData {
     #[serde(rename = "cargo-all-features")]
     pub cargo_all_features: Option<CargoAllFeatures>,
 }
 
 impl Package {
     // Validation used by validator
-    pub fn validate(&self) -> Result<(), ValidationError> {
-        if let Some(config) = &self.cargo_all_features {
-            if let Some(allow_ist) = &config.allowlist {
-                if !allow_ist.is_empty() {
-                    if let Some(deny_list) = &config.denylist {
-                        if !deny_list.is_empty() {
-                            let mut error = ValidationError::new(
-                                "Package has both `allowlist` and `denylist` keys",
-                            );
-                            error.add_param("name".into(), &self.name);
-
-                            return Err(error);
+    pub fn validate(&self) -> Result<(), Errors> {
+        if let Some(metadata) = &self.metadata {
+            if let Some(config) = metadata.cargo_all_features.as_ref() {
+                if let Some(allow_ist) = &config.allowlist {
+                    if !allow_ist.is_empty() {
+                        if let Some(deny_list) = &config.denylist {
+                            if !deny_list.is_empty() {
+                                return Err(Errors::ValidationFailed {
+                                    message: format!("Package {} has both `allowlist` and `denylist` keys", &self.name)
+                                });
+                            }
                         }
-                    }
-                    if let Some(extra_features) = &config.extra_features {
-                        if !extra_features.is_empty() {
-                            let mut error = ValidationError::new(
-                                "Package has both `allowlist` and `extra_features` keys",
-                            );
-                            error.add_param("name".into(), &self.name);
-
-                            return Err(error);
+                        if let Some(extra_features) = &config.extra_features {
+                            if !extra_features.is_empty() {
+                                return Err(Errors::ValidationFailed {
+                                    message: format!("Package {} has both `allowlist` and `extra_features` keys", &self.name)
+                                });
+                            }
                         }
-                    }
-                    if config.skip_optional_dependencies.is_some() {
-                        let mut error = ValidationError::new(
-                            "Package has both `allowlist` and `skip_optional_dependencies` keys",
-                        );
-                        error.add_param("name".into(), &self.name);
-
-                        return Err(error);
+                        if config.skip_optional_dependencies.is_some() {
+                            return Err(Errors::ValidationFailed {
+                                message: format!("Package {} has both `allowlist` and `skip_optional_dependencies` keys", &self.name)
+                            });
+                        }
                     }
                 }
             }
@@ -94,9 +89,14 @@ impl Package {
 
         // Closure to check if is in deny list
         let filter_denylist = |f: &String| {
-            self.cargo_all_features
+            self.metadata
                 .as_ref()
-                .map(|mf| !mf.denylist.as_ref().map(|e| e.contains(f)).unwrap_or(false))
+                .map(|meta| {
+                    meta.cargo_all_features
+                        .as_ref()
+                        .map(|mf| !mf.denylist.as_ref().map(|e| e.contains(f)).unwrap_or(false))
+                        .unwrap_or(true)
+                })
                 .unwrap_or(true)
         };
 
@@ -127,22 +127,32 @@ impl Package {
         // Clippy screams due to the `.map` and `.unwrap_or` as they seem complex
         #[allow(clippy::blocks_in_if_conditions)]
         if self
-            .cargo_all_features
+            .metadata
             .as_ref()
-            .map(|config| {
-                config
-                    .allowlist
+            .map(|meta| {
+                meta.cargo_all_features
                     .as_ref()
-                    .map(|e| e.is_empty())
+                    .map(|config| {
+                        config
+                            .allowlist
+                            .as_ref()
+                            .map(|e| e.is_empty())
+                            .unwrap_or(true)
+                    })
                     .unwrap_or(true)
             })
             .unwrap_or(true)
         {
             // This handles the pre-1.60 case
             if !self
-                .cargo_all_features
+                .metadata
                 .as_ref()
-                .map(|config| config.skip_optional_dependencies.unwrap_or(false))
+                .map(|meta| {
+                    meta.cargo_all_features
+                        .as_ref()
+                        .map(|config| config.skip_optional_dependencies.unwrap_or(false))
+                        .unwrap_or(false)
+                })
                 .unwrap_or(false)
                 && !found_dep
             {
@@ -154,25 +164,36 @@ impl Package {
                     // This handles the post-1.60 case
                     .filter(|f| {
                         !self
-                            .cargo_all_features
+                            .metadata
                             .as_ref()
-                            .map(|config| config.skip_optional_dependencies.unwrap_or(false))
+                            .map(|meta| {
+                                meta.cargo_all_features
+                                    .as_ref()
+                                    .map(|config| {
+                                        config.skip_optional_dependencies.unwrap_or(false)
+                                    })
+                                    .unwrap_or(false)
+                            })
                             .unwrap_or(false)
                             || !optional_denylist.contains(f)
                     }),
             );
-
-            if let Some(config) = self.cargo_all_features.as_ref() {
-                if let Some(extra_features) = &config.extra_features {
-                    features.par_extend(extra_features.par_iter().filter(|e| filter_denylist(e)));
+            if let Some(metadata) = self.metadata.as_ref() {
+                if let Some(config) = &metadata.cargo_all_features {
+                    if let Some(extra_features) = &config.extra_features {
+                        features
+                            .par_extend(extra_features.par_iter().filter(|e| filter_denylist(e)));
+                    }
                 }
             }
         } else {
             // allowlist cannot be mixed with denylist or any of the other above options,
             // no need to filter
-            if let Some(config) = self.cargo_all_features.as_ref() {
-                if let Some(allow_list) = &config.allowlist {
-                    features.par_extend(allow_list.par_iter())
+            if let Some(metadata) = self.metadata.as_ref() {
+                if let Some(config) = &metadata.cargo_all_features {
+                    if let Some(allow_list) = &config.allowlist {
+                        features.par_extend(allow_list.par_iter())
+                    }
                 }
             }
         };
@@ -181,17 +202,19 @@ impl Package {
 
         for n in 0..=features.len() {
             'outer: for feature_set in features.iter().combinations(n) {
-                if let Some(config) = self.cargo_all_features.as_ref() {
-                    if let Some(skip_feature_sets) = &config.skip_feature_sets {
-                        'inner: for skip_feature_set in skip_feature_sets {
-                            for feature in skip_feature_set.iter() {
-                                if !feature_set.contains(&&feature) {
-                                    // skip_feature_set does not match
-                                    continue 'inner;
+                if let Some(metadata) = self.metadata.as_ref() {
+                    if let Some(config) = metadata.cargo_all_features.as_ref() {
+                        if let Some(skip_feature_sets) = &config.skip_feature_sets {
+                            'inner: for skip_feature_set in skip_feature_sets {
+                                for feature in skip_feature_set.iter() {
+                                    if !feature_set.contains(&&feature) {
+                                        // skip_feature_set does not match
+                                        continue 'inner;
+                                    }
                                 }
+                                // skip_feature_set matches: do not add it to feature_sets
+                                continue 'outer;
                             }
-                            // skip_feature_set matches: do not add it to feature_sets
-                            continue 'outer;
                         }
                     }
                 }

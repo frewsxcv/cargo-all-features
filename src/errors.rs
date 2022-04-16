@@ -5,7 +5,6 @@ use std::fmt::{self, Display, Formatter};
 use std::io;
 use std::process::ExitStatus;
 use std::string::FromUtf8Error;
-use validator::ValidationError;
 
 /// Enumeration of errors which could be returned by this crate
 #[derive(Debug)]
@@ -48,7 +47,9 @@ pub enum Errors {
     },
     RustUpNotFound,
     IoError(io::Error),
-    ValidationFailed(ValidationError),
+    ValidationFailed{
+        message: String
+    },
     SerdeJsonFailedToParse(serde_json::Error),
     CargoNotAvailable,
 }
@@ -72,12 +73,6 @@ impl<T> From<Errors> for Result<T, Errors> {
     }
 }
 
-/// Implementation of erorrs for `ValidationError`
-impl From<ValidationError> for Errors {
-    fn from(error: ValidationError) -> Self {
-        Errors::ValidationFailed(error)
-    }
-}
 
 /// Implementation of erorrs for `serde_json::Error`
 impl From<serde_json::Error> for Errors {
@@ -156,8 +151,8 @@ impl Display for Errors {
             Self::FailedToParseOutputOfCommand { error } => {
                 write!(f, "an error ocurred during utf8 parsing. {}", error)
             }
-            Self::ValidationFailed(errors) => {
-                write!(f, "validation of data failed. {}", errors)
+            Self::ValidationFailed {message} => {
+                write!(f, "validation of data failed. {}", message)
             }
             Self::SerdeJsonFailedToParse(errors) => {
                 write!(f, "failed to parse json. {}", errors)

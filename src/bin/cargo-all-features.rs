@@ -106,7 +106,7 @@ pub fn main() {
 
     // checking if cross is installed
     if command_target == CommandTarget::Cross && which::which("cross").is_err() {
-        println!("{}: Could not find `cross` installed. To install it run `cargo install cross` or header over to https://github.com/cross-rs/cross for more information", Paint::red("error").bold());
+        println!("{}: Could not find `cross` installed. To install it run `cargo install cross` or head over to https://github.com/cross-rs/cross for more information", Paint::red("error").bold());
         process::exit(127);
     }
 

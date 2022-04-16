@@ -87,7 +87,6 @@ impl RustUpToolchain {
                 Some(value) => {
                     // Split channel or version from triplet
                     let parts: Vec<&str> = value.par_split('-').collect();
-                    println!("{:?}", parts);
                     Ok(Self {
                         channel: parts[0].to_owned(),
                         triplet: parts[1..].join("-"),

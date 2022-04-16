@@ -1,9 +1,8 @@
 use crate::types::FeatureList;
 use serde::Deserialize;
 use std::collections::HashSet;
-use validator::Validate;
 
-#[derive(Clone, Deserialize, Validate)]
+#[derive(Clone, Deserialize, Debug)]
 pub struct CargoAllFeatures {
     pub skip_feature_sets: Option<Vec<FeatureList>>,
     pub skip_optional_dependencies: Option<bool>,
