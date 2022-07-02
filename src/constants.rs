@@ -39,6 +39,10 @@ lazy_static::lazy_static! {
             name: "miri",
             help_url: "https://github.com/rust-lang/miri"
         }),
+        (CargoCommand::Clippy, CargoCommandOrigin::RustUpComponent {
+            name: "clippy",
+            help_url: "https://github.com/rust-lang/rust-clippy#usage"
+        }),
         (CargoCommand::Udeps, CargoCommandOrigin::ThirdPartyCrate {
             name: "cargo-udeps",
             help_url: "https://github.com/est31/cargo-udeps"

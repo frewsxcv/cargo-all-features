@@ -126,6 +126,7 @@ pub enum CargoCommand {
     Udeps,
     Tarpaulin,
     Nextest,
+    Clippy,
 }
 
 impl CargoCommand {
@@ -140,6 +141,7 @@ impl CargoCommand {
             Self::Udeps => &["udeps"],
             Self::Tarpaulin => &["tarpaulin"],
             Self::Nextest => &["nextest", "run"],
+            Self::Clippy => &["clippy"],
         }
     }
 
@@ -154,6 +156,7 @@ impl CargoCommand {
             Self::Udeps => "     Analyzing with Udeps ",
             Self::Tarpaulin => "     Testing with Tarpaulin ",
             Self::Nextest => "     Testing with NexTest ",
+            Self::Clippy => "    Checking styling",
         }
     }
 }
