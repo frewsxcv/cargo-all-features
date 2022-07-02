@@ -82,7 +82,8 @@ jobs:
      - name: Install cargo-all-features
         uses: actions-rs/cargo@v1
         with:
-          command: install cargo-all-features
+          command: install
+          args: cargo-all-features --version 1.8.0
     - name: Build all features for release
       run: cargo all-features build --chunks  ${{matrix.chunks}} --chunk  ${{matrix.chunk}} -- --release
 ```

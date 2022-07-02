@@ -15,7 +15,7 @@ pub fn run(command: CargoCommand) {
         .collect();
 
     println!(
-        "{}: the command `cargo {}` may be deprecated, please use `cargo all-features build`",
+        "{}: the command `cargo {}` is deprecated, please use `cargo all-features build`",
         Paint::yellow("warning").bold(),
         name
     );
