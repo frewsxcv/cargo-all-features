@@ -8,7 +8,11 @@ Cargo subcommands that build and test all feature flag combinations for a crate.
 
 ```
 cargo install cargo-all-features
+
+# or via cargo-binstall
+cargo binstall cargo-all-features
 ```
+
 
 ## Usage
 
@@ -44,7 +48,7 @@ cargo all-features test -- <CARGO TEST FLAGS>
     - [`cargo miri test`](https://github.com/rust-lang/miri) for testing using miri -> _rustup component `miri` is needed_
 - Cargo plugins
     - [`cargo udeps`](https://github.com/est31/cargo-udeps) to analyze for unused dependencies -> _cargo plugin `cargo-udeps` is needed_
-    - [`cargo tarpaulin`](https://github.com/xd009642/tarpaulin) to analyze for unused dependencies -> _cargo plugin `cargo-tarpaulin` is needed_
+    - [`cargo tarpaulin`](https://github.com/xd009642/tarpaulin) generate code coverage reports -> _cargo plugin `cargo-tarpaulin` is needed_
     - [`cargo nextest`](https://nexte.st/) the next generation test runner for cargo -> _cargo plugin `cargo-nextest` is needed_
 
 > for more information run `cargo all-features --help`

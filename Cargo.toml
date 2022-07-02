@@ -34,3 +34,8 @@ lazy_static = "1.4.0"
 which = "4.2.5"
 clap = { version = "3.1.9", features = ["derive", "cargo"] }
 yansi = "0.5.1"
+
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/{ version }/{ name }-{ target }.txz"
+bin-dir = "{ bin }{ binary-ext }"
+pkg-fmt = "txz"
