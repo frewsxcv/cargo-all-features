@@ -47,8 +47,8 @@ pub enum Errors {
     },
     RustUpNotFound,
     IoError(io::Error),
-    ValidationFailed{
-        message: String
+    ValidationFailed {
+        message: String,
     },
     SerdeJsonFailedToParse(serde_json::Error),
     CargoNotAvailable,
@@ -72,7 +72,6 @@ impl<T> From<Errors> for Result<T, Errors> {
         Err(errors)
     }
 }
-
 
 /// Implementation of erorrs for `serde_json::Error`
 impl From<serde_json::Error> for Errors {
@@ -151,7 +150,7 @@ impl Display for Errors {
             Self::FailedToParseOutputOfCommand { error } => {
                 write!(f, "an error ocurred during utf8 parsing. {}", error)
             }
-            Self::ValidationFailed {message} => {
+            Self::ValidationFailed { message } => {
                 write!(f, "validation of data failed. {}", message)
             }
             Self::SerdeJsonFailedToParse(errors) => {

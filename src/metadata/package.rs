@@ -43,14 +43,20 @@ impl Package {
                         if let Some(deny_list) = &config.denylist {
                             if !deny_list.is_empty() {
                                 return Err(Errors::ValidationFailed {
-                                    message: format!("Package {} has both `allowlist` and `denylist` keys", &self.name)
+                                    message: format!(
+                                        "Package {} has both `allowlist` and `denylist` keys",
+                                        &self.name
+                                    ),
                                 });
                             }
                         }
                         if let Some(extra_features) = &config.extra_features {
                             if !extra_features.is_empty() {
                                 return Err(Errors::ValidationFailed {
-                                    message: format!("Package {} has both `allowlist` and `extra_features` keys", &self.name)
+                                    message: format!(
+                                        "Package {} has both `allowlist` and `extra_features` keys",
+                                        &self.name
+                                    ),
                                 });
                             }
                         }
