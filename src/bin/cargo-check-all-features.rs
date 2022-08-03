@@ -1,6 +1,9 @@
-use cargo_all_features::{run, test_runner::CargoCommand};
-use std::error::Error;
+#![forbid(unsafe_code)]
+#![deny(clippy::all)]
 
-fn main() -> Result<(), Box<dyn Error>> {
-    run(CargoCommand::Check)
+use cargo_all_features::runner::CargoCommand;
+mod common;
+
+fn main() {
+    common::deprecated_glue::run(CargoCommand::Check);
 }

@@ -16,7 +16,26 @@ path = "src/bin/cargo-build-all-features.rs"
 name = "cargo-test-all-features"
 path = "src/bin/cargo-test-all-features.rs"
 
+
+[[bin]]
+name = "cargo-check-all-features"
+path = "src/bin/cargo-check-all-features.rs"
+
+[[bin]]
+name = "cargo-all-features"
+path = "src/bin/cargo-all-features.rs"
+
 [dependencies]
-json = "0.12"
-itertools = "0.10"
-termcolor = "1"
+itertools = "0.10.3"
+serde_json = "1.0.79"
+serde = { version = "1.0.136", features = ["derive"] }
+rayon = "1.5.2"
+lazy_static = "1.4.0"
+which = "4.2.5"
+clap = { version = "3.1.9", features = ["derive", "cargo"] }
+yansi = "0.5.1"
+
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/{ version }/{ name }-{ target }.txz"
+bin-dir = "{ bin }{ binary-ext }"
+pkg-fmt = "txz"
