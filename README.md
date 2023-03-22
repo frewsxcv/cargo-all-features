@@ -60,6 +60,16 @@ extra_features = [
 # Exclude certain features from the build matrix
 denylist = ["foo", "bar"]
 
+# Always include these features in combinations.
+# These features should not be included in `skip_feature_sets` or `denylist`, they get
+# added in later
+always_include_features = ["baz"]
+
+# The maximum number of features to try at once. Does not count features from `always_include_features`.
+# This is useful for reducing the number of combinations run for a crate with a large amount of features,
+# since in most cases a bug just needs a small set of 2-3 features to reproduce.
+max_combination_size = 4
+
 # Only include certain features in the build matrix
 #(incompatible with `denylist`, `skip_optional_dependencies`, and `extra_features`)
 allowlist = ["foo", "bar"]
