@@ -57,6 +57,8 @@ pub struct Package {
     pub allowlist: FeatureList,
     pub denylist: HashSet<Feature>,
     pub extra_features: FeatureList,
+    pub always_include_features: FeatureList,
+    pub max_combination_size: Option<usize>,
 }
 
 impl TryFrom<json::JsonValue> for Package {
@@ -116,8 +118,22 @@ impl TryFrom<json::JsonValue> for Package {
             .map(|member| member.as_str().unwrap().to_owned())
             .map(Feature)
             .collect();
+        let always_include_features: FeatureList = json_value["metadata"]["cargo-all-features"]
+            ["always_include_features"]
+            .members()
+            .map(|member| member.as_str().unwrap().to_owned())
+            .map(Feature)
+            .collect();
+        let max_combination_size =
+            json_value["metadata"]["cargo-all-features"]["max_combination_size"].as_usize();
 
         if !allowlist.is_empty() {
+            if !always_include_features.is_empty() {
+                return Err(format!(
+                    "Package {} has both `allowlist` and `always_include_features` keys",
+                    name
+                ));
+            }
             if !denylist.is_empty() {
                 return Err(format!(
                     "Package {} has both `allowlist` and `denylist` keys",
@@ -136,6 +152,34 @@ impl TryFrom<json::JsonValue> for Package {
                     name
                 ));
             }
+            if max_combination_size.is_some() {
+                return Err(format!(
+                    "Package {} has both `allowlist` and `max_combination_size` keys",
+                    name
+                ));
+            }
+        }
+
+        if !always_include_features.is_empty() {
+            let always: HashSet<_> = always_include_features.iter().collect();
+            for set in &skip_feature_sets {
+                for feature in set.iter() {
+                    if always.contains(&feature) {
+                        return Err(format!(
+                            "Package {} has feature {} in both `skip_feature_sets` and `always_include_features`",
+                            name, &**feature
+                        ));
+                    }
+                }
+            }
+            for feature in denylist.iter() {
+                if always.contains(&feature) {
+                    return Err(format!(
+                        "Package {} has feature {} in both `denylist` and `always_include_features`",
+                        name, &**feature
+                    ));
+                }
+            }
         }
 
         Ok(Package {
@@ -150,6 +194,8 @@ impl TryFrom<json::JsonValue> for Package {
             extra_features,
             allowlist,
             denylist,
+            always_include_features,
+            max_combination_size,
         })
     }
 }
