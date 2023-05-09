@@ -32,6 +32,14 @@ Test crate with all feature flag combinations:
 cargo test-all-features <CARGO TEST FLAGS>
 ```
 
+Test just the [root
+crate](https://doc.rust-lang.org/cargo/reference/workspaces.html#root-package)
+in a workspace, rather than every crate.
+
+```(shell)
+cargo test-all-features --root-only <CARGO TEST FLAGS>
+```
+
 
 ## Why?
 

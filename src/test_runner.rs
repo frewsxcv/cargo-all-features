@@ -1,5 +1,5 @@
 use crate::types::FeatureList;
-use std::{env, error, path, process};
+use std::{error, path, process};
 use termcolor::WriteColor;
 
 pub struct TestRunner {
@@ -17,6 +17,7 @@ impl TestRunner {
         crate_name: String,
         feature_set: FeatureList,
         working_dir: path::PathBuf,
+        args: &[String],
     ) -> Self {
         let mut command = process::Command::new(&crate::cargo_cmd());
 
@@ -39,7 +40,7 @@ impl TestRunner {
         }
 
         // Pass through cargo args
-        for arg in env::args().skip(2) {
+        for arg in args.iter() {
             command.arg(&arg);
         }
 
