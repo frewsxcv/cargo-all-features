@@ -167,15 +167,7 @@ impl TryFrom<json::JsonValue> for Package {
 
         for list in &always_include_features {
             let one_of: HashSet<_> = list.iter().collect();
-            for skip in &skip_feature_sets {
-                if skip.iter().all(|f| one_of.contains(f)) {
-                    return Err(format!(
-                        "Package {} has all features in a list of `always_include_features` also in `skip_feature_sets`",
-                        name
-                    ));
-                }
-            }
-            if denylist.iter().all(|f| one_of.contains(f)) {
+            if denylist.iter().any(|f| !one_of.contains(f)) {
                 return Err(format!(
                     "Package {} has all features in a list of `always_include_features` also in `denylist`",
                     name
