@@ -57,7 +57,7 @@ pub struct Package {
     pub allowlist: FeatureList,
     pub denylist: HashSet<Feature>,
     pub extra_features: FeatureList,
-    pub always_include_features: FeatureList,
+    pub always_include_features: Vec<FeatureList>,
     pub max_combination_size: Option<usize>,
 }
 
@@ -118,11 +118,16 @@ impl TryFrom<json::JsonValue> for Package {
             .map(|member| member.as_str().unwrap().to_owned())
             .map(Feature)
             .collect();
-        let always_include_features: FeatureList = json_value["metadata"]["cargo-all-features"]
-            ["always_include_features"]
+        let always_include_features: Vec<FeatureList> = json_value["metadata"]
+            ["cargo-all-features"]["always_include_features"]
             .members()
-            .map(|member| member.as_str().unwrap().to_owned())
-            .map(Feature)
+            .map(|member| {
+                member
+                    .members()
+                    .map(|feature| feature.as_str().unwrap().to_owned())
+                    .map(Feature)
+                    .collect()
+            })
             .collect();
         let max_combination_size =
             json_value["metadata"]["cargo-all-features"]["max_combination_size"].as_usize();
@@ -160,25 +165,21 @@ impl TryFrom<json::JsonValue> for Package {
             }
         }
 
-        if !always_include_features.is_empty() {
-            let always: HashSet<_> = always_include_features.iter().collect();
-            for set in &skip_feature_sets {
-                for feature in set.iter() {
-                    if always.contains(&feature) {
-                        return Err(format!(
-                            "Package {} has feature {} in both `skip_feature_sets` and `always_include_features`",
-                            name, &**feature
-                        ));
-                    }
-                }
-            }
-            for feature in denylist.iter() {
-                if always.contains(&feature) {
+        for list in &always_include_features {
+            let one_of: HashSet<_> = list.iter().collect();
+            for skip in &skip_feature_sets {
+                if skip.iter().all(|f| one_of.contains(f)) {
                     return Err(format!(
-                        "Package {} has feature {} in both `denylist` and `always_include_features`",
-                        name, &**feature
+                        "Package {} has all features in a list of `always_include_features` also in `skip_feature_sets`",
+                        name
                     ));
                 }
+            }
+            if denylist.iter().all(|f| one_of.contains(f)) {
+                return Err(format!(
+                    "Package {} has all features in a list of `always_include_features` also in `denylist`",
+                    name
+                ));
             }
         }
 

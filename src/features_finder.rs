@@ -8,10 +8,7 @@ use std::collections::HashSet;
 pub fn fetch_feature_sets(package: &crate::cargo_metadata::Package) -> Vec<FeatureList> {
     let mut features = FeatureList::default();
 
-    let mut denylist_and_alwayses = package.denylist.clone();
-    denylist_and_alwayses.extend(package.always_include_features.iter().cloned());
-
-    let filter_denylist_and_alwayses = |f: &Feature| !denylist_and_alwayses.contains(f);
+    let filter_denylist = |f: &Feature| !package.denylist.contains(f);
 
     let mut implicit_features = HashSet::<&str>::new();
     let mut optional_dep_used_with_dep_syntax_outside_of_implicit_feature = HashSet::new();
@@ -41,7 +38,7 @@ pub fn fetch_feature_sets(package: &crate::cargo_metadata::Package) -> Vec<Featu
         if !package.skip_optional_dependencies {
             features.extend(
                 fetch_optional_dependencies(package)
-                    .filter(filter_denylist_and_alwayses)
+                    .filter(filter_denylist)
                     .filter(|f: &Feature| {
                         !optional_dep_used_with_dep_syntax_outside_of_implicit_feature
                             .contains(f.0.as_str())
@@ -51,7 +48,7 @@ pub fn fetch_feature_sets(package: &crate::cargo_metadata::Package) -> Vec<Featu
 
         features.extend(
             fetch_features(package)
-                .filter(filter_denylist_and_alwayses)
+                .filter(filter_denylist)
                 .filter(|f: &Feature| !implicit_features.contains(f.0.as_str())),
         );
 
@@ -60,7 +57,7 @@ pub fn fetch_feature_sets(package: &crate::cargo_metadata::Package) -> Vec<Featu
                 .extra_features
                 .iter()
                 .cloned()
-                .filter(filter_denylist_and_alwayses),
+                .filter(filter_denylist),
         );
     } else {
         // allowlist cannot be mixed with denylist or any of the other above options,
@@ -73,23 +70,23 @@ pub fn fetch_feature_sets(package: &crate::cargo_metadata::Package) -> Vec<Featu
     let max_combination_size = package.max_combination_size.unwrap_or(features.len());
     for n in 0..=max_combination_size {
         'outer: for feature_set in features.iter().combinations(n) {
-            'inner: for skip_feature_set in &package.skip_feature_sets {
-                for feature in skip_feature_set.iter() {
-                    if !feature_set.contains(&feature) {
-                        // skip_feature_set does not match
-                        continue 'inner;
-                    }
+            for skip_feature_set in &package.skip_feature_sets {
+                // skip permutation if skip_feature_set is a subset
+                if skip_feature_set.iter().all(|f| feature_set.contains(&f)) {
+                    continue 'outer;
                 }
-                // skip_feature_set matches: do not add it to feature_sets
-                continue 'outer;
             }
-            feature_sets.push(
-                feature_set
-                    .into_iter()
-                    .chain(package.always_include_features.iter())
-                    .cloned()
-                    .collect(),
-            );
+            // skip permutations which do not contain at least one feature per set of always_include_features
+            for include_feature_set in &package.always_include_features {
+                if include_feature_set
+                    .iter()
+                    .all(|f| !feature_set.contains(&f))
+                {
+                    continue 'outer;
+                }
+            }
+
+            feature_sets.push(feature_set.into_iter().cloned().collect());
         }
     }
 
