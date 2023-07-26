@@ -45,9 +45,7 @@ struct Cli {
 }
 
 pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error::Error>> {
-    let cli = match CargoCli::parse() {
-        CargoCli::Subcommand(cli) => cli,
-    };
+    let CargoCli::Subcommand(cli) = CargoCli::parse();
     let mut cmd = Command::new("cargo-all-features");
     if cli.chunk > cli.n_chunks || cli.chunk < 1 {
         cmd.error(
@@ -82,7 +80,7 @@ pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error
         return Ok(());
     };
     if cli.n_chunks != 1 {
-        let packages: String = chunk.iter().map(|p| [&p.name, ","]).flatten().collect();
+        let packages: String = chunk.iter().flat_map(|p| [&p.name, ","]).collect();
         let packages = packages.trim_end_matches(',');
         println!(
             "Running on chunk {} out of {} ({chunk_size} packages: {packages})",
@@ -91,7 +89,7 @@ pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error
     }
 
     for package in chunk {
-        let outcome = test_all_features_for_package(&package, cargo_command, &cli.cargo_args)?;
+        let outcome = test_all_features_for_package(package, cargo_command, &cli.cargo_args)?;
 
         if let TestOutcome::Fail(exit_status) = outcome {
             process::exit(exit_status.code().unwrap());

@@ -37,7 +37,7 @@ impl TestRunner {
 
         // Pass through cargo args
         for arg in cargo_args {
-            command.arg(&arg);
+            command.arg(arg);
         }
 
         TestRunner {
