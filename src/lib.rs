@@ -18,9 +18,9 @@ struct Cli {
     n_chunks: usize,
     #[arg(
         long,
-        default_value_t = 0,
+        default_value_t = 1,
         requires = "n_chunks",
-        help = "Which chunk to test, indexed at 0"
+        help = "Which chunk to test, indexed at 1"
     )]
     chunk: usize,
 
@@ -36,7 +36,7 @@ pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error
     let cli = Cli::parse();
     let mut cmd = Command::new("cargo-all-features");
 
-    if cli.chunk >= cli.n_chunks {
+    if cli.chunk > cli.n_chunks || cli.chunk < 1 {
         cmd.error(
             ErrorKind::InvalidValue,
             "Must not ask for chunks out of bounds",
@@ -61,7 +61,8 @@ pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error
         chunk_size += 1;
     }
 
-    let chunk = if let Some(chunk) = packages.chunks(chunk_size).nth(cli.chunk) {
+    // - 1 since we are 1-indexing
+    let chunk = if let Some(chunk) = packages.chunks(chunk_size).nth(cli.chunk - 1) {
         chunk
     } else {
         println!("Chunk is empty (did you ask for more chunks than there are packages?");
