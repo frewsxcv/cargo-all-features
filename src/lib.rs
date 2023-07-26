@@ -12,6 +12,7 @@ struct Cli {
     #[arg(
         long,
         default_value_t = 1,
+        requires = "chunk",
         help = "Split the workspace into n chunks, each chunk containing a roughly equal number of crates"
     )]
     n_chunks: usize,
