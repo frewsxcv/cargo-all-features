@@ -21,11 +21,7 @@ impl TestRunner {
     ) -> Self {
         let mut command = process::Command::new(&crate::cargo_cmd());
 
-        command.arg(match cargo_command {
-            CargoCommand::Build => "build",
-            CargoCommand::Check => "check",
-            CargoCommand::Test => "test",
-        });
+        command.arg(cargo_command.get_name());
         command.arg("--no-default-features");
 
         let mut features = feature_set
@@ -90,4 +86,21 @@ pub enum CargoCommand {
     Build,
     Check,
     Test,
+}
+
+impl CargoCommand {
+    pub fn get_name(self) -> &'static str {
+        match self {
+            CargoCommand::Build => "build",
+            CargoCommand::Check => "check",
+            CargoCommand::Test => "test",
+        }
+    }
+    pub fn get_cli_name(self) -> &'static str {
+        match self {
+            CargoCommand::Build => "build-all-features",
+            CargoCommand::Check => "check-all-features",
+            CargoCommand::Test => "test-all-features",
+        }
+    }
 }

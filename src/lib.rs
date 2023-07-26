@@ -6,7 +6,19 @@ pub mod features_finder;
 pub mod test_runner;
 mod types;
 
-#[derive(Parser)]
+#[derive(Parser, Clone)]
+#[command(author, version, about = "See https://crates.io/crates/cargo-all-features", long_about = None)]
+#[command(bin_name = "cargo")]
+/// The cargo wrapper so that `cargo check-all-features ...` will work, since it internally invokes `check-all-features` with itself
+/// as the first argument
+enum CargoCli {
+    #[command(name = "check-all-features")]
+    #[command(alias = "build-all-features")]
+    #[command(alias = "test-all-features")]
+    Subcommand(Cli),
+}
+
+#[derive(Parser, Clone)]
 #[command(author, version, about = "See https://crates.io/crates/cargo-all-features", long_about = None)]
 struct Cli {
     #[arg(
@@ -33,9 +45,10 @@ struct Cli {
 }
 
 pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error::Error>> {
-    let cli = Cli::parse();
+    let cli = match CargoCli::parse() {
+        CargoCli::Subcommand(cli) => cli,
+    };
     let mut cmd = Command::new("cargo-all-features");
-
     if cli.chunk > cli.n_chunks || cli.chunk < 1 {
         cmd.error(
             ErrorKind::InvalidValue,
