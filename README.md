@@ -75,6 +75,8 @@ max_combination_size = 4
 allowlist = ["foo", "bar"]
 ```
 
+The project also supports chunking: `--n-chunks 3 --chunks 1` will split the crates being tested into three sets (alphabetically, currently), and run the requested command for the first set of crates only. This is useful for splitting up CI jobs or performing disk cleanups since for large workspaces `check-all-features` and friends can take a very long time and produce a ton of artifacts.
+
 ## License
 
 Licensed under either of
