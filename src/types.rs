@@ -22,13 +22,13 @@ impl FromIterator<Feature> for FeatureList {
 
 impl AsMut<<FeatureList as Deref>::Target> for &mut FeatureList {
     fn as_mut(&mut self) -> &mut <FeatureList as Deref>::Target {
-        self.deref_mut()
+        self
     }
 }
 
 impl AsRef<<FeatureList as Deref>::Target> for &FeatureList {
     fn as_ref(&self) -> &<FeatureList as Deref>::Target {
-        self.deref()
+        self
     }
 }
 
