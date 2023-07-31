@@ -48,7 +48,7 @@ impl Deref for FeatureList {
 
 impl AsRef<str> for &Feature {
     fn as_ref(&self) -> &str {
-        self.deref()
+        self
     }
 }
 
