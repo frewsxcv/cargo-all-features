@@ -2,18 +2,18 @@ use crate::types::FeatureList;
 use std::{error, path, process};
 use termcolor::WriteColor;
 
-pub struct TestRunner {
+pub struct TestRunner<'a> {
     command: process::Command,
     crate_name: String,
     /// A comma separated list of features
     features: String,
     working_dir: path::PathBuf,
-    cargo_command: CargoCommand,
+    cargo_command: &'a str,
 }
 
-impl TestRunner {
-    pub fn new(
-        cargo_command: CargoCommand,
+impl<'a> TestRunner<'a> {
+    pub fn new<'b: 'a>(
+        cargo_command: &'b str,
         crate_name: String,
         feature_set: FeatureList,
         cargo_args: &[String],
@@ -21,7 +21,6 @@ impl TestRunner {
     ) -> Self {
         let mut command = process::Command::new(&crate::cargo_cmd());
 
-        command.arg(cargo_command.get_name());
         command.arg("--no-default-features");
 
         let mut features = feature_set
@@ -39,6 +38,7 @@ impl TestRunner {
         for arg in cargo_args {
             command.arg(arg);
         }
+        command.arg(cargo_command);
 
         TestRunner {
             crate_name,
@@ -58,11 +58,7 @@ impl TestRunner {
                     .set_bold(true),
             )
             .unwrap();
-        match self.cargo_command {
-            CargoCommand::Build => print!("    Building "),
-            CargoCommand::Check => print!("    Checking "),
-            CargoCommand::Test => print!("     Testing "),
-        }
+        print!("    Running {} ", self.cargo_command);
         stdout.reset().unwrap();
         println!("crate={} features=[{}]", self.crate_name, self.features);
 
