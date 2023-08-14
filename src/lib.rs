@@ -51,6 +51,13 @@ struct Cli {
     chunk: usize,
 
     #[arg(
+        long,
+        default_value_t = false,
+        help = "Whether to put feature selection flags after CARGO_ARGS (instead of before) when invoking cargo"
+    )]
+    feature_flags_last: bool,
+
+    #[arg(
         help = "Arguments to pass down to cargo",
         allow_hyphen_values = true,
         trailing_var_arg = true
@@ -109,7 +116,7 @@ pub fn run(cargo_command: Option<test_runner::CargoCommand>) -> Result<(), Box<d
     }
 
     for package in chunk {
-        let outcome = test_all_features_for_package(package, &subcommand, &cli.cargo_args)?;
+        let outcome = test_all_features_for_package(package, &subcommand, cli.feature_flags_last, &cli.cargo_args)?;
 
         if let TestOutcome::Fail(exit_status) = outcome {
             process::exit(exit_status.code().unwrap());
@@ -122,6 +129,7 @@ pub fn run(cargo_command: Option<test_runner::CargoCommand>) -> Result<(), Box<d
 fn test_all_features_for_package(
     package: &cargo_metadata::Package,
     command: &str,
+    feature_flags_last: bool,
     cargo_args: &[String],
 ) -> Result<TestOutcome, Box<dyn error::Error>> {
     let feature_sets = crate::features_finder::fetch_feature_sets(package);
@@ -130,6 +138,7 @@ fn test_all_features_for_package(
         let mut test_runner = crate::test_runner::TestRunner::new(
             command,
             package.name.clone(),
+            feature_flags_last,
             feature_set.clone(),
             cargo_args,
             package

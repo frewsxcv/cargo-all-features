@@ -15,30 +15,24 @@ impl<'a> TestRunner<'a> {
     pub fn new<'b: 'a>(
         cargo_command: &'b str,
         crate_name: String,
+        feature_flags_last: bool,
         feature_set: FeatureList,
         cargo_args: &[String],
         working_dir: path::PathBuf,
     ) -> Self {
         let mut command = process::Command::new(&crate::cargo_cmd());
 
-        command.arg("--no-default-features");
-
-        let mut features = feature_set
-            .iter()
-            .fold(String::new(), |s, feature| s + feature + ",");
-
-        if !features.is_empty() {
-            features.remove(features.len() - 1);
-
-            command.arg("--features");
-            command.arg(&features);
-        }
-
-        // Pass through cargo args
-        for arg in cargo_args {
-            command.arg(arg);
-        }
         command.arg(cargo_command);
+
+        // Put feature arguments as last only if feature_flags_last is true to retain backwards compatibility
+        let features;
+        if feature_flags_last {
+            TestRunner::add_cargo_args(&mut command, cargo_args);
+            features = TestRunner::add_features(&mut command, &feature_set);
+        } else {
+            features = TestRunner::add_features(&mut command, &feature_set);
+            TestRunner::add_cargo_args(&mut command, cargo_args);
+        }
 
         TestRunner {
             crate_name,
@@ -74,6 +68,29 @@ impl<'a> TestRunner<'a> {
         } else {
             crate::TestOutcome::Fail(output.status)
         })
+    }
+
+    fn add_features(command: &mut process::Command, feature_set: &FeatureList) -> String {
+        command.arg("--no-default-features");
+
+        let mut features = feature_set
+        .iter()
+        .fold(String::new(), |s, feature| s + feature + ",");
+
+        if !features.is_empty() {
+            features.remove(features.len() - 1);
+
+            command.arg("--features");
+            command.arg(&features);
+        }
+
+        features
+    }
+
+    fn add_cargo_args(command: &mut process::Command, cargo_args: &[String]) {
+        for arg in cargo_args {
+            command.arg(arg);
+        }
     }
 }
 
