@@ -9,19 +9,15 @@ fn simple() -> Result<(), Box<dyn std::error::Error>> {
     let valid_feature_sets = vec![
         vec![],
         vec!["A"],
-        vec!["B"],
         vec!["C"],
         vec!["oDepB"],
         vec!["A", "B"],
         vec!["A", "C"],
         vec!["A", "oDepB"],
-        vec!["B", "C"],
-        vec!["B", "oDepB"],
         vec!["C", "oDepB"],
         vec!["A", "B", "C"],
         vec!["A", "B", "oDepB"],
         vec!["A", "C", "oDepB"],
-        vec!["B", "C", "oDepB"],
         vec!["A", "B", "C", "oDepB"],
     ];
     test_settings("", valid_feature_sets, None)
@@ -37,11 +33,9 @@ fn skip_sets_1() -> Result<(), Box<dyn std::error::Error>> {
     let valid_feature_sets = vec![
         vec![],
         vec!["A"],
-        vec!["B"],
         vec!["oDepB"],
         vec!["A", "B"],
         vec!["A", "oDepB"],
-        vec!["B", "oDepB"],
         vec!["A", "B", "oDepB"],
     ];
     test_settings(settings, valid_feature_sets, None)
@@ -57,14 +51,11 @@ fn skip_sets_2() -> Result<(), Box<dyn std::error::Error>> {
     let valid_feature_sets = vec![
         vec![],
         vec!["A"],
-        vec!["B"],
         vec!["C"],
         vec!["oDepB"],
         vec!["A", "B"],
         vec!["A", "C"],
         vec!["A", "oDepB"],
-        vec!["B", "C"],
-        vec!["B", "oDepB"],
         vec!["A", "B", "C"],
         vec!["A", "B", "oDepB"],
     ];
@@ -81,14 +72,11 @@ fn skip_sets_3() -> Result<(), Box<dyn std::error::Error>> {
     let valid_feature_sets = vec![
         vec![],
         vec!["A"],
-        vec!["B"],
         vec!["C"],
         vec!["oDepB"],
         vec!["A", "B"],
         vec!["A", "C"],
         vec!["A", "oDepB"],
-        vec!["B", "C"],
-        vec!["B", "oDepB"],
         vec!["C", "oDepB"],
         vec!["A", "B", "C"],
         vec!["A", "B", "oDepB"],
@@ -105,11 +93,9 @@ fn skip_opt_deps() -> Result<(), Box<dyn std::error::Error>> {
     let valid_feature_sets = vec![
         vec![],
         vec!["A"],
-        vec!["B"],
         vec!["C"],
         vec!["A", "B"],
         vec!["A", "C"],
-        vec!["B", "C"],
         vec!["A", "B", "C"],
     ];
     test_settings(settings, valid_feature_sets, None)
@@ -132,11 +118,9 @@ fn denylist() -> Result<(), Box<dyn std::error::Error>> {
     let valid_feature_sets = vec![
         vec![],
         vec!["A"],
-        vec!["B"],
         vec!["oDepB"],
         vec!["A", "B"],
         vec!["A", "oDepB"],
-        vec!["B", "oDepB"],
         vec!["A", "B", "oDepB"],
     ];
     test_settings(settings, valid_feature_sets, None)
@@ -151,19 +135,15 @@ fn extra_feats() -> Result<(), Box<dyn std::error::Error>> {
     let valid_feature_sets = vec![
         vec![],
         vec!["A"],
-        vec!["B"],
         vec!["C"],
         vec!["oDepB"],
         vec!["A", "B"],
         vec!["A", "C"],
         vec!["A", "oDepB"],
-        vec!["B", "C"],
-        vec!["B", "oDepB"],
         vec!["C", "oDepB"],
         vec!["A", "B", "C"],
         vec!["A", "B", "oDepB"],
         vec!["A", "C", "oDepB"],
-        vec!["B", "C", "oDepB"],
         vec!["A", "B", "C", "oDepB"],
     ];
     test_settings(settings, valid_feature_sets, None)
