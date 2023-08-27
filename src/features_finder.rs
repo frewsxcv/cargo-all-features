@@ -17,14 +17,14 @@ pub fn fetch_feature_sets(package: &crate::cargo_metadata::Package) -> Vec<Featu
     let mut optional_dep_used_with_dep_syntax_outside_of_implicit_feature = HashSet::new();
 
     for (feature, implied_features) in &package.feature_map {
-        for implied_dep in implied_features
-            .iter()
-            .filter_map(|v| v.strip_prefix("dep:"))
-        {
-            if implied_features.len() == 1 && implied_dep == feature {
-                // Feature of the shape foo = ["dep:foo"]
-                implicit_features.insert(feature);
-            } else {
+        if implied_features.len() == 1 && implied_features[0] == "dep:".to_owned() + feature {
+            // Feature of the shape foo = ["dep:foo"]
+            implicit_features.insert(feature);
+        } else {
+            for implied_dep in implied_features
+                .iter()
+                .filter_map(|v| v.strip_prefix("dep:"))
+            {
                 optional_dep_used_with_dep_syntax_outside_of_implicit_feature.insert(implied_dep);
             }
         }
