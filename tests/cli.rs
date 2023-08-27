@@ -20,19 +20,15 @@ fn simple() -> Result<(), Box<dyn std::error::Error>> {
     let valid_feature_sets = vec![
         vec![],
         vec!["A"],
-        vec!["B"],
         vec!["C"],
         vec!["oDepB"],
         vec!["A", "B"],
         vec!["A", "C"],
         vec!["A", "oDepB"],
-        vec!["B", "C"],
-        vec!["B", "oDepB"],
         vec!["C", "oDepB"],
         vec!["A", "B", "C"],
         vec!["A", "B", "oDepB"],
         vec!["A", "C", "oDepB"],
-        vec!["B", "C", "oDepB"],
         vec!["A", "B", "C", "oDepB"],
     ];
     test_dummy_crate_setup(
@@ -63,11 +59,9 @@ fn skip_sets_1() -> Result<(), Box<dyn std::error::Error>> {
     let valid_feature_sets = vec![
         vec![],
         vec!["A"],
-        vec!["B"],
         vec!["oDepB"],
         vec!["A", "B"],
         vec!["A", "oDepB"],
-        vec!["B", "oDepB"],
         vec!["A", "B", "oDepB"],
     ];
     test_dummy_crate_setup(
@@ -98,14 +92,11 @@ fn skip_sets_2() -> Result<(), Box<dyn std::error::Error>> {
     let valid_feature_sets = vec![
         vec![],
         vec!["A"],
-        vec!["B"],
         vec!["C"],
         vec!["oDepB"],
         vec!["A", "B"],
         vec!["A", "C"],
         vec!["A", "oDepB"],
-        vec!["B", "C"],
-        vec!["B", "oDepB"],
         vec!["A", "B", "C"],
         vec!["A", "B", "oDepB"],
     ];
@@ -137,14 +128,11 @@ fn skip_sets_3() -> Result<(), Box<dyn std::error::Error>> {
     let valid_feature_sets = vec![
         vec![],
         vec!["A"],
-        vec!["B"],
         vec!["C"],
         vec!["oDepB"],
         vec!["A", "B"],
         vec!["A", "C"],
         vec!["A", "oDepB"],
-        vec!["B", "C"],
-        vec!["B", "oDepB"],
         vec!["C", "oDepB"],
         vec!["A", "B", "C"],
         vec!["A", "B", "oDepB"],
@@ -176,11 +164,9 @@ fn skip_opt_deps() -> Result<(), Box<dyn std::error::Error>> {
     let valid_feature_sets = vec![
         vec![],
         vec!["A"],
-        vec!["B"],
         vec!["C"],
         vec!["A", "B"],
         vec!["A", "C"],
-        vec!["B", "C"],
         vec!["A", "B", "C"],
     ];
     test_dummy_crate_setup(
@@ -233,11 +219,9 @@ fn denylist() -> Result<(), Box<dyn std::error::Error>> {
     let valid_feature_sets = vec![
         vec![],
         vec!["A"],
-        vec!["B"],
         vec!["oDepB"],
         vec!["A", "B"],
         vec!["A", "oDepB"],
-        vec!["B", "oDepB"],
         vec!["A", "B", "oDepB"],
     ];
     test_dummy_crate_setup(
@@ -267,19 +251,15 @@ fn extra_feats() -> Result<(), Box<dyn std::error::Error>> {
     let valid_feature_sets = vec![
         vec![],
         vec!["A"],
-        vec!["B"],
         vec!["C"],
         vec!["oDepB"],
         vec!["A", "B"],
         vec!["A", "C"],
         vec!["A", "oDepB"],
-        vec!["B", "C"],
-        vec!["B", "oDepB"],
         vec!["C", "oDepB"],
         vec!["A", "B", "C"],
         vec!["A", "B", "oDepB"],
         vec!["A", "C", "oDepB"],
-        vec!["B", "C", "oDepB"],
         vec!["A", "B", "C", "oDepB"],
     ];
     test_dummy_crate_setup(
@@ -367,7 +347,7 @@ fn allowlist_with_skip_opt_deps() -> Result<(), Box<dyn std::error::Error>> {
         skip_optional_dependencies = true
         allowlist = ["A", "B", "oDepB"]
     "#;
-    let valid_feature_sets = vec![vec![], vec!["A"], vec!["B"], vec!["A", "B"]];
+    let valid_feature_sets = vec![vec![], vec!["A"], vec!["A", "B"]];
     test_dummy_crate_setup(
         feats_deps_allfeatssettings_section,
         valid_feature_sets,
