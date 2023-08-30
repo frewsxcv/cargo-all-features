@@ -71,7 +71,7 @@ always_include_features = ["baz"]
 max_combination_size = 4
 
 # Only include certain features in the build matrix
-#(incompatible with `denylist`, `skip_optional_dependencies`, and `extra_features`)
+#(incompatible with `denylist`, and `extra_features`)
 allowlist = ["foo", "bar"]
 ```
 

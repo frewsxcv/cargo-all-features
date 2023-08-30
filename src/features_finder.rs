@@ -37,16 +37,15 @@ pub fn fetch_feature_sets(package: &crate::cargo_metadata::Package) -> Vec<Featu
         implicit_features.remove(x);
     }
 
+    let optional_dependencies = fetch_optional_dependencies(package)
+        .filter(filter_denylist_and_alwayses)
+        .filter(|f: &Feature| {
+            !optional_dep_used_with_dep_syntax_outside_of_implicit_feature.contains(f.0.as_str())
+        });
+
     if package.allowlist.is_empty() {
         if !package.skip_optional_dependencies {
-            features.extend(
-                fetch_optional_dependencies(package)
-                    .filter(filter_denylist_and_alwayses)
-                    .filter(|f: &Feature| {
-                        !optional_dep_used_with_dep_syntax_outside_of_implicit_feature
-                            .contains(f.0.as_str())
-                    }),
-            );
+            features.extend(optional_dependencies);
         }
 
         features.extend(
@@ -65,7 +64,18 @@ pub fn fetch_feature_sets(package: &crate::cargo_metadata::Package) -> Vec<Featu
     } else {
         // allowlist cannot be mixed with denylist or any of the other above options,
         // no need to filter
-        features.extend(package.allowlist.iter().cloned())
+        if package.skip_optional_dependencies {
+            let optional_dependencies: Vec<_> = optional_dependencies.collect();
+            features.extend(
+                package
+                    .allowlist
+                    .iter()
+                    .cloned()
+                    .filter(|f| !optional_dependencies.contains(f)),
+            );
+        } else {
+            features.extend(package.allowlist.iter().cloned());
+        }
     };
 
     let mut feature_sets = vec![];

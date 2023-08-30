@@ -125,12 +125,6 @@ impl TryFrom<json::JsonValue> for Package {
                     name
                 ));
             }
-            if maybe_skip_optional.is_some() {
-                return Err(format!(
-                    "Package {} has both `allowlist` and `skip_optional_dependencies` keys",
-                    name
-                ));
-            }
             if max_combination_size.is_some() {
                 return Err(format!(
                     "Package {} has both `allowlist` and `max_combination_size` keys",

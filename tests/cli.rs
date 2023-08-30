@@ -361,10 +361,11 @@ fn allowlist_with_skip_opt_deps() -> Result<(), Box<dyn std::error::Error>> {
         skip_optional_dependencies = true
         allowlist = ["A", "B", "oDepB"]
     "#;
+    let valid_feature_sets = vec![vec![], vec!["A"], vec!["B"], vec!["A", "B"]];
     test_dummy_crate_setup(
         feats_deps_allfeatssettings_section,
-        vec![],
-        Some("Package testdummy has both `allowlist` and `skip_optional_dependencies` keys"),
+        valid_feature_sets,
+        None,
     )
 }
 
