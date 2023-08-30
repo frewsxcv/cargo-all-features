@@ -66,6 +66,7 @@ pub struct Package {
     pub denylist: HashSet<Feature>,
     pub extra_features: FeatureList,
     pub always_include_features: FeatureList,
+    pub rules: Vec<String>,
     pub max_combination_size: Option<usize>,
 }
 
@@ -104,6 +105,10 @@ impl TryFrom<json::JsonValue> for Package {
             .collect();
         let always_include_features =
             parse_json_into_feature_list(&json_value_settings["always_include_features"]);
+        let rules = json_value_settings["rules"]
+            .members()
+            .map(|val| val.to_string())
+            .collect();
         let max_combination_size = json_value_settings["max_combination_size"].as_usize();
 
         if !allowlist.is_empty() {
@@ -158,6 +163,7 @@ impl TryFrom<json::JsonValue> for Package {
             allowlist,
             denylist,
             always_include_features,
+            rules,
             max_combination_size,
         })
     }

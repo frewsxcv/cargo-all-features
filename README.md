@@ -72,6 +72,21 @@ max_combination_size = 4
 # Only include certain features in the build matrix
 #(incompatible with `denylist`, and `extra_features`)
 allowlist = ["foo", "bar"]
+
+# Specify rules through expressions using logical operators !, &, ^, |, <=>, =>,
+# and summation +, -, >=, <=, >, <, == (in order of high to low precedence)
+# Every selected feature set will fullfill ALL specified rules.
+rules = [
+    "A + B + C == 1",  # exactly one of the three features A, B, C is enabled
+    "A + B + C >= 1",  # at least one of the three is enabled
+    "A => (B|C)",  # if package A is enabled, at least one of B or C needs to be enabled too
+    "'foo-bar'",  # the feature set must contain feature foo-bar, use '' quotation for feature names with hyphens
+    """((A => (B|C)) <=> (A+C==1)) \
+    | !'foo-bar_baz' """,  # expressions can be arbitrarily nested
+    "!(A | B | C)",  # equivalent to denylist = [A, B, C]
+    "A & B & C",  # equivalent to always_include_features = [A, B, C]
+    "!(A & B & C)",  # equivalent to skip_feature_sets containing [A, B, C]
+]
 ```
 
 The project also supports chunking: `--n-chunks 3 --chunks 1` will split the crates being tested into three sets (alphabetically, currently), and run the requested command for the first set of crates only. This is useful for splitting up CI jobs or performing disk cleanups since for large workspaces `check-all-features` and friends can take a very long time and produce a ton of artifacts.

@@ -1,3 +1,4 @@
+use super::parser::parse_expr;
 use crate::types::Feature;
 use std::{collections::HashSet, fmt::Debug, fmt::Display};
 
@@ -15,6 +16,10 @@ pub enum Expr {
 }
 
 impl Expr {
+    pub fn new(expr: &str) -> Self {
+        parse_expr(expr)
+    }
+
     pub fn infix(self, op: InfixOp, rhs: Self) -> Self {
         Self::Infix {
             lhs: Box::new(self),

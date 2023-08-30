@@ -1,10 +1,15 @@
 pub use expr::Expr;
 
 mod expr;
+mod parser;
 
 pub mod new_rule {
     use super::expr::{Expr, InfixOp, Literal, PrefixOp};
     use crate::types::Feature;
+
+    pub fn expr(expr: &str) -> Expr {
+        Expr::new(expr)
+    }
 
     pub fn chain<'a, I>(op: InfixOp, features: I) -> Option<Expr>
     where
@@ -68,7 +73,6 @@ pub mod new_rule {
         }
     }
 }
-
 #[cfg(test)]
 mod tests {
     use super::new_rule;

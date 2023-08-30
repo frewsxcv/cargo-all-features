@@ -8,7 +8,9 @@ use std::collections::HashSet;
 
 type NamedRule = (String, Expr);
 
-pub fn fetch_feature_sets(package: &crate::cargo_metadata::Package) -> Vec<FeatureList> {
+pub fn fetch_feature_sets(
+    package: &crate::cargo_metadata::Package,
+) -> Result<Vec<FeatureList>, String> {
     let mut features = HashSet::new();
 
     if package.allowlist.is_empty() {
@@ -61,6 +63,9 @@ pub fn fetch_feature_sets(package: &crate::cargo_metadata::Package) -> Vec<Featu
             new_rule::not_all(conflict.iter()).unwrap(),
         ));
     }
+    for rule in package.rules.iter() {
+        named_rules.push((rule.to_owned(), new_rule::expr(rule)));
+    }
 
     let max_combination_size = package.max_combination_size.unwrap_or(features.len());
     create_valid_feature_sets(&features, &named_rules, max_combination_size)
@@ -70,20 +75,20 @@ fn create_valid_feature_sets(
     features: &HashSet<Feature>,
     rules: &Vec<NamedRule>,
     max_combination_size: usize,
-) -> Vec<FeatureList> {
+) -> Result<Vec<FeatureList>, String> {
     let mut feature_sets = Vec::new();
     for n in 0..=max_combination_size {
         'outer: for feature_set in features.iter().combinations(n) {
             let feature_set = HashSet::from_iter(feature_set);
             for (_name, rule) in rules {
-                if !rule.eval(&feature_set).unwrap() {
+                if !rule.eval(&feature_set)? {
                     continue 'outer;
                 }
             }
             feature_sets.push(feature_set.into_iter().cloned().collect());
         }
     }
-    feature_sets
+    Ok(feature_sets)
 }
 
 fn create_implicit_feat_dependency_filter(

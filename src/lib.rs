@@ -105,7 +105,7 @@ fn test_all_features_for_package(
     command: crate::test_runner::CargoCommand,
     cargo_args: &[String],
 ) -> Result<TestOutcome, Box<dyn error::Error>> {
-    let feature_sets = crate::features_finder::fetch_feature_sets(package);
+    let feature_sets = crate::features_finder::fetch_feature_sets(package)?;
 
     for feature_set in feature_sets {
         let mut test_runner = crate::test_runner::TestRunner::new(
