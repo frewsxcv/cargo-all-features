@@ -372,7 +372,14 @@ fn conflicting_rules() -> Result<(), Box<dyn std::error::Error>> {
         skip_feature_sets = [["A", "B"]]
         always_include_features = ["B"]
     "#;
-    test_dummy_crate_setup(feats_deps_allfeatssettings_section, vec![], None)
+    test_dummy_crate_setup(
+        feats_deps_allfeatssettings_section,
+        vec![],
+        Some(
+            "no feature set validates against the given rules: \
+            initial #sets 16 -> always_include_features (8/16) -> implication:B (4/8) -> conflict:A,B (0/4)"
+        ),
+    )
 }
 
 #[test]

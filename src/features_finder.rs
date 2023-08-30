@@ -68,7 +68,15 @@ pub fn fetch_feature_sets(
     }
 
     let max_combination_size = package.max_combination_size.unwrap_or(features.len());
-    create_valid_feature_sets(&features, &named_rules, max_combination_size)
+    let ans = create_valid_feature_sets(&features, &named_rules, max_combination_size)?;
+    if ans.is_empty() {
+        Err(format!(
+            "no feature set validates against the given rules: {}",
+            report_greedy_rule_filtering(&features, named_rules, max_combination_size,)?
+        ))
+    } else {
+        Ok(ans)
+    }
 }
 
 fn create_valid_feature_sets(
@@ -89,6 +97,58 @@ fn create_valid_feature_sets(
         }
     }
     Ok(feature_sets)
+}
+
+fn report_greedy_rule_filtering(
+    features: &HashSet<Feature>,
+    mut rules: Vec<NamedRule>,
+    max_combination_size: usize,
+) -> Result<String, String> {
+    let mut feature_sets = Vec::new();
+    for n in 0..=max_combination_size {
+        for fset in features.iter().combinations(n) {
+            feature_sets.push(HashSet::from_iter(fset));
+        }
+    }
+    let mut ans = format!("initial #sets {}", feature_sets.len());
+    while !rules.is_empty() && !feature_sets.is_empty() {
+        let (rule, left_overs) = largest_rule_filter(&feature_sets, &rules)?;
+        if left_overs.len() == feature_sets.len() {
+            break;
+        }
+        ans += &format!(
+            " -> {} ({}/{})",
+            rule.0,
+            left_overs.len(),
+            feature_sets.len()
+        );
+        let index = rules.iter().position(|x| std::ptr::eq(x, rule)).unwrap();
+        rules.remove(index);
+        feature_sets = left_overs;
+    }
+    Ok(ans)
+}
+
+fn largest_rule_filter<'a, 'b>(
+    feature_sets: &Vec<HashSet<&'a Feature>>,
+    rules: &'b Vec<NamedRule>,
+) -> Result<(&'b NamedRule, Vec<HashSet<&'a Feature>>), String> {
+    let mut ans = (&rules[0], feature_sets.clone());
+    for rule in rules {
+        let mut left_overs = Vec::new();
+        for fset in feature_sets {
+            if rule.1.eval(fset)? {
+                left_overs.push(fset.clone());
+            }
+            if left_overs.len() >= ans.1.len() {
+                break;
+            }
+        }
+        if left_overs.len() < ans.1.len() {
+            ans = (rule, left_overs);
+        }
+    }
+    Ok(ans)
 }
 
 fn create_implicit_feat_dependency_filter(
