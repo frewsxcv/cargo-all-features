@@ -337,10 +337,16 @@ fn skip_sets_with_always_include() -> Result<(), Box<dyn std::error::Error>> {
         skip_feature_sets = [["A", "B"]]
         always_include_features = ["A"]
     "#;
+    let valid_feature_sets = vec![
+        vec!["A"],
+        vec!["A", "C"],
+        vec!["A", "oDepB"],
+        vec!["A", "C", "oDepB"],
+    ];
     test_dummy_crate_setup(
         feats_deps_allfeatssettings_section,
-        vec![],
-        Some("Package testdummy has feature A in both `skip_feature_sets` and `always_include_features`"),
+        valid_feature_sets,
+        None,
     )
 }
 

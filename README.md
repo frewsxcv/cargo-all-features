@@ -61,8 +61,7 @@ extra_features = [
 denylist = ["foo", "bar"]
 
 # Always include these features in combinations.
-# These features should not be included in `skip_feature_sets` or `denylist`, they get
-# added in later
+# These features should not be included in `denylist`
 always_include_features = ["baz"]
 
 # The maximum number of features to try at once. Does not count features from `always_include_features`.
