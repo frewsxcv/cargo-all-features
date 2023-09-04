@@ -355,6 +355,26 @@ fn allowlist_with_skip_opt_deps() -> Result<(), Box<dyn std::error::Error>> {
     )
 }
 
+#[test]
+fn conflicting_rules() -> Result<(), Box<dyn std::error::Error>> {
+    let feats_deps_allfeatssettings_section = r#"
+[features]
+A = []
+B = ["A"]
+C = ["dep:optDepC"]
+
+[dependencies]
+fixDepA = {path = "fixDepA"}
+oDepB = {path = "optDepB", package = "optDepB", optional = true}
+optDepC = {path = "optDepC", optional = true}
+
+[package.metadata.cargo-all-features]
+skip_feature_sets = [["A", "B"]]
+always_include_features = ["B"]
+"#;
+    test_dummy_crate_setup(feats_deps_allfeatssettings_section, vec![], None)
+}
+
 fn cargo_dep_setup(
     dep_name: &str,
     cwd: &std::path::Path,

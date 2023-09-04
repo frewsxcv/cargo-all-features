@@ -3,6 +3,7 @@ use std::{env, error, ffi, process};
 
 pub mod cargo_metadata;
 pub mod features_finder;
+pub mod rules;
 pub mod test_runner;
 mod types;
 

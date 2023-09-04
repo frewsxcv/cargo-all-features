@@ -21,6 +21,9 @@ json = "0.12"
 itertools = "0.10"
 termcolor = "1"
 clap = { version = "4.3.19", features = ["derive"] }
+pest = "2.7.3"
+pest_derive = "2.7.3"
+lazy_static = "1.4.0"
 
 [dev-dependencies]
 assert_cmd = "2.0.11"
