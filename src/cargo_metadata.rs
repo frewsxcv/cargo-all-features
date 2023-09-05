@@ -44,6 +44,14 @@ impl From<json::JsonValue> for Dependency {
     }
 }
 
+fn parse_json_into_feature(val: &json::JsonValue) -> Feature {
+    Feature(val.to_string())
+}
+
+fn parse_json_into_feature_list(val: &json::JsonValue) -> FeatureList {
+    val.members().map(parse_json_into_feature).collect()
+}
+
 #[derive(Clone)]
 pub struct Package {
     pub id: String,
@@ -58,12 +66,14 @@ pub struct Package {
     pub denylist: HashSet<Feature>,
     pub extra_features: FeatureList,
     pub always_include_features: FeatureList,
+    pub rules: Vec<String>,
     pub max_combination_size: Option<usize>,
 }
 
 impl TryFrom<json::JsonValue> for Package {
     type Error = String;
     fn try_from(json_value: json::JsonValue) -> Result<Self, String> {
+        let json_value_settings = &json_value["metadata"]["cargo-all-features"];
         let id = json_value["id"].as_str().unwrap().to_owned();
         let name = json_value["name"].as_str().unwrap().to_owned();
         let manifest_path =
@@ -79,53 +89,27 @@ impl TryFrom<json::JsonValue> for Package {
             .collect();
         let feature_map = json_value["features"]
             .entries()
-            .map(|(k, v)| {
-                (
-                    k.to_owned(),
-                    FeatureList(v.members().map(|v| Feature(v.to_string())).collect()),
-                )
-            })
+            .map(|(k, v)| (k.to_owned(), parse_json_into_feature_list(v)))
             .collect();
-        let skip_feature_sets: Vec<FeatureList> = json_value["metadata"]["cargo-all-features"]
-            ["skip_feature_sets"]
+        let skip_feature_sets: Vec<FeatureList> = json_value_settings["skip_feature_sets"]
             .members()
-            .map(|member| {
-                member
-                    .members()
-                    .map(|feature| feature.as_str().unwrap().to_owned())
-                    .map(Feature)
-                    .collect()
-            })
+            .map(parse_json_into_feature_list)
             .collect();
-        let maybe_skip_optional =
-            json_value["metadata"]["cargo-all-features"]["skip_optional_dependencies"].as_bool();
-        let skip_optional_dependencies: bool = maybe_skip_optional.unwrap_or(false);
-        let extra_features: FeatureList = json_value["metadata"]["cargo-all-features"]
-            ["extra_features"]
+        let maybe_skip_optional = json_value_settings["skip_optional_dependencies"].as_bool();
+        let skip_optional_dependencies = maybe_skip_optional.unwrap_or(false);
+        let extra_features = parse_json_into_feature_list(&json_value_settings["extra_features"]);
+        let allowlist = parse_json_into_feature_list(&json_value_settings["allowlist"]);
+        let denylist: HashSet<_> = json_value_settings["denylist"]
             .members()
-            .map(|member| member.as_str().unwrap().to_owned())
-            .map(Feature)
+            .map(parse_json_into_feature)
             .collect();
-
-        let allowlist: FeatureList = json_value["metadata"]["cargo-all-features"]["allowlist"]
+        let always_include_features =
+            parse_json_into_feature_list(&json_value_settings["always_include_features"]);
+        let rules = json_value_settings["rules"]
             .members()
-            .map(|member| member.as_str().unwrap().to_owned())
-            .map(Feature)
+            .map(|val| val.to_string())
             .collect();
-
-        let denylist: HashSet<_> = json_value["metadata"]["cargo-all-features"]["denylist"]
-            .members()
-            .map(|member| member.as_str().unwrap().to_owned())
-            .map(Feature)
-            .collect();
-        let always_include_features: FeatureList = json_value["metadata"]["cargo-all-features"]
-            ["always_include_features"]
-            .members()
-            .map(|member| member.as_str().unwrap().to_owned())
-            .map(Feature)
-            .collect();
-        let max_combination_size =
-            json_value["metadata"]["cargo-all-features"]["max_combination_size"].as_usize();
+        let max_combination_size = json_value_settings["max_combination_size"].as_usize();
 
         if !allowlist.is_empty() {
             if !always_include_features.is_empty() {
@@ -146,12 +130,6 @@ impl TryFrom<json::JsonValue> for Package {
                     name
                 ));
             }
-            if maybe_skip_optional.is_some() {
-                return Err(format!(
-                    "Package {} has both `allowlist` and `skip_optional_dependencies` keys",
-                    name
-                ));
-            }
             if max_combination_size.is_some() {
                 return Err(format!(
                     "Package {} has both `allowlist` and `max_combination_size` keys",
@@ -162,16 +140,6 @@ impl TryFrom<json::JsonValue> for Package {
 
         if !always_include_features.is_empty() {
             let always: HashSet<_> = always_include_features.iter().collect();
-            for set in &skip_feature_sets {
-                for feature in set.iter() {
-                    if always.contains(&feature) {
-                        return Err(format!(
-                            "Package {} has feature {} in both `skip_feature_sets` and `always_include_features`",
-                            name, &**feature
-                        ));
-                    }
-                }
-            }
             for feature in denylist.iter() {
                 if always.contains(&feature) {
                     return Err(format!(
@@ -195,6 +163,7 @@ impl TryFrom<json::JsonValue> for Package {
             allowlist,
             denylist,
             always_include_features,
+            rules,
             max_combination_size,
         })
     }

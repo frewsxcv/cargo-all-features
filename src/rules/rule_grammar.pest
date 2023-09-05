@@ -1,0 +1,28 @@
+// PRATT: prefix* ~ primary ~ postfix* ~ (infix ~ prefix* ~ primary ~ postfix*)*
+expr       = _{ SOI ~ recur_expr ~ EOI }
+recur_expr =  { prefix* ~ primary ~ (infix ~ prefix* ~ primary)* }
+
+primary         = _{ simple_featname | "'" ~ featname ~ "'" | integer | "(" ~ recur_expr ~ ")" }
+simple_featname = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+featname        = @{ (ASCII_ALPHANUMERIC | "_" | "-")+ }
+integer         = @{ ASCII_DIGIT+ }
+
+infix   = _{ and | xor | or | equiv | implied | add | sub | loweq | greateq | lower | greater | equal }
+and     =  { "&" }
+xor     =  { "^" }
+or      =  { "|" }
+equiv   =  { "<=>" }
+implied =  { "=>" }
+add     =  { "+" }
+sub     =  { "-" }
+loweq   =  { "<=" }
+greateq =  { ">=" }
+lower   =  { "<" }
+greater =  { ">" }
+equal   =  { "==" }
+
+prefix = _{ not | neg }
+not    =  { "!" }
+neg    =  { "-" }
+
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
