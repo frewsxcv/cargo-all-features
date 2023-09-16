@@ -27,6 +27,190 @@ fn simple() -> Result<(), Box<dyn std::error::Error>> {
     test_settings("", valid_feature_sets, None)
 }
 
+#[test]
+fn skip_sets_1() -> Result<(), Box<dyn std::error::Error>> {
+    let settings = r#"
+        skip_feature_sets = [
+            ["C"],
+        ]
+    "#;
+    let valid_feature_sets = vec![
+        vec![],
+        vec!["A"],
+        vec!["B"],
+        vec!["oDepB"],
+        vec!["A", "B"],
+        vec!["A", "oDepB"],
+        vec!["B", "oDepB"],
+        vec!["A", "B", "oDepB"],
+    ];
+    test_settings(settings, valid_feature_sets, None)
+}
+
+#[test]
+fn skip_sets_2() -> Result<(), Box<dyn std::error::Error>> {
+    let settings = r#"
+        skip_feature_sets = [
+            ["oDepB", "C"],
+        ]
+    "#;
+    let valid_feature_sets = vec![
+        vec![],
+        vec!["A"],
+        vec!["B"],
+        vec!["C"],
+        vec!["oDepB"],
+        vec!["A", "B"],
+        vec!["A", "C"],
+        vec!["A", "oDepB"],
+        vec!["B", "C"],
+        vec!["B", "oDepB"],
+        vec!["A", "B", "C"],
+        vec!["A", "B", "oDepB"],
+    ];
+    test_settings(settings, valid_feature_sets, None)
+}
+
+#[test]
+fn skip_sets_3() -> Result<(), Box<dyn std::error::Error>> {
+    let settings = r#"
+        skip_feature_sets = [
+            ["oDepB", "B", "C"],
+        ]
+    "#;
+    let valid_feature_sets = vec![
+        vec![],
+        vec!["A"],
+        vec!["B"],
+        vec!["C"],
+        vec!["oDepB"],
+        vec!["A", "B"],
+        vec!["A", "C"],
+        vec!["A", "oDepB"],
+        vec!["B", "C"],
+        vec!["B", "oDepB"],
+        vec!["C", "oDepB"],
+        vec!["A", "B", "C"],
+        vec!["A", "B", "oDepB"],
+        vec!["A", "C", "oDepB"],
+    ];
+    test_settings(settings, valid_feature_sets, None)
+}
+
+#[test]
+fn skip_opt_deps() -> Result<(), Box<dyn std::error::Error>> {
+    let settings = r#"
+        skip_optional_dependencies = true
+    "#;
+    let valid_feature_sets = vec![
+        vec![],
+        vec!["A"],
+        vec!["B"],
+        vec!["C"],
+        vec!["A", "B"],
+        vec!["A", "C"],
+        vec!["B", "C"],
+        vec!["A", "B", "C"],
+    ];
+    test_settings(settings, valid_feature_sets, None)
+}
+
+#[test]
+fn allowlist() -> Result<(), Box<dyn std::error::Error>> {
+    let settings = r#"
+        allowlist = ["A", "oDepB"]
+    "#;
+    let valid_feature_sets = vec![vec![], vec!["A"], vec!["oDepB"], vec!["A", "oDepB"]];
+    test_settings(settings, valid_feature_sets, None)
+}
+
+#[test]
+fn denylist() -> Result<(), Box<dyn std::error::Error>> {
+    let settings = r#"
+        denylist = ["C"]
+    "#;
+    let valid_feature_sets = vec![
+        vec![],
+        vec!["A"],
+        vec!["B"],
+        vec!["oDepB"],
+        vec!["A", "B"],
+        vec!["A", "oDepB"],
+        vec!["B", "oDepB"],
+        vec!["A", "B", "oDepB"],
+    ];
+    test_settings(settings, valid_feature_sets, None)
+}
+
+#[test]
+fn extra_feats() -> Result<(), Box<dyn std::error::Error>> {
+    let settings = r#"
+        skip_optional_dependencies = true
+        extra_features = ["oDepB"]
+    "#;
+    let valid_feature_sets = vec![
+        vec![],
+        vec!["A"],
+        vec!["B"],
+        vec!["C"],
+        vec!["oDepB"],
+        vec!["A", "B"],
+        vec!["A", "C"],
+        vec!["A", "oDepB"],
+        vec!["B", "C"],
+        vec!["B", "oDepB"],
+        vec!["C", "oDepB"],
+        vec!["A", "B", "C"],
+        vec!["A", "B", "oDepB"],
+        vec!["A", "C", "oDepB"],
+        vec!["B", "C", "oDepB"],
+        vec!["A", "B", "C", "oDepB"],
+    ];
+    test_settings(settings, valid_feature_sets, None)
+}
+
+#[test]
+fn always_include() -> Result<(), Box<dyn std::error::Error>> {
+    let settings = r#"
+        #skip_optional_dependencies = true
+        denylist = ["C"]
+        always_include_features = ["A"]
+    "#;
+    let valid_feature_sets = vec![
+        vec!["A"],
+        vec!["A", "B"],
+        vec!["A", "oDepB"],
+        vec!["A", "B", "oDepB"],
+    ];
+    test_settings(settings, valid_feature_sets, None)
+}
+
+#[test]
+fn skip_sets_with_always_include() -> Result<(), Box<dyn std::error::Error>> {
+    let settings = r#"
+        skip_feature_sets = [["A", "B"]]
+        always_include_features = ["A"]
+    "#;
+    test_settings(
+        settings,
+        vec![],
+        Some("Package testdummy has feature A in both `skip_feature_sets` and `always_include_features`"),
+    )
+}
+
+#[test]
+fn allowlist_with_skip_opt_deps() -> Result<(), Box<dyn std::error::Error>> {
+    let settings = r#"
+        skip_optional_dependencies = true
+        allowlist = ["A", "B", "oDepB"]
+    "#;
+    test_settings(
+        settings,
+        vec![],
+        Some("Package testdummy has both `allowlist` and `skip_optional_dependencies` keys"),
+    )
+}
+
 /*
 The NormStr trait provides a normalize method which produces a string representation from itself.
 The normalization in these test cases refers to the order of features in lists. The order shall be ignored, therefor
