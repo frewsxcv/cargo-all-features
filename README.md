@@ -32,12 +32,34 @@ Test crate with all feature flag combinations:
 cargo test-all-features <CARGO TEST FLAGS>
 ```
 
+To run another cargo subcommand (i.e. `clippy`, `miri`, etc.) with all feature flag combinations:
+
+```
+cargo all-features <CARGO SUBCOMMAND> <CARGO FLAGS>
+```
+For example, to run Clippy with all feature flag combinations:
+
+```
+cargo all-features clippy <CARGO CLIPPY FLAGS>
+```
 
 ## Why?
 
 If you have a crate that utilizes Rust feature flags, it’s common to set up a test matrix in your continuous integration tooling to _individually_ test all feature flags. This setup can be difficult to maintain and easy to forget to update as feature flags come and go. It’s also not exhaustive, as it’s possible enabling _combinations_ of feature flags could result in a compilation error that should be fixed. This utility was built to address these concerns.
 
 ## Options
+
+### Command line options
+
+- `--n-chunks` and `--chunks`:  
+  The project supports chunking. `--n-chunks 3 --chunks 1` will split the crates being tested into three sets (alphabetically, currently), and run the requested command for the first set of crates only. This is useful for splitting up CI jobs or performing disk cleanups since for large workspaces `check-all-features` and friends can take a very long time and produce a ton of artifacts.
+- `--feature-flags-last`:  
+  The project uses the `--no-default-features` and `--features` flags of cargo to select the features to use when building/testing/etc. Usually, those flags are put before the provided `<CARGO FLAGS>`, causing tools such as `miri` to not work with cargo-all-features. Using this option, feature selection flags will be put after `<CARGO FLAGS>`. Thus, for example, it's possible to call `miri` using:
+  ```
+  cargo all-features --feature-flags-last miri test <OTHER MIRI FLAGS>
+  ```
+
+### Other options
 
 You can add the following options to your Cargo.toml file to configure the behavior of cargo-all-features under the heading `[package.metadata.cargo-all-features]`:
 
@@ -74,8 +96,6 @@ max_combination_size = 4
 #(incompatible with `denylist`, `skip_optional_dependencies`, and `extra_features`)
 allowlist = ["foo", "bar"]
 ```
-
-The project also supports chunking: `--n-chunks 3 --chunks 1` will split the crates being tested into three sets (alphabetically, currently), and run the requested command for the first set of crates only. This is useful for splitting up CI jobs or performing disk cleanups since for large workspaces `check-all-features` and friends can take a very long time and produce a ton of artifacts.
 
 ## License
 

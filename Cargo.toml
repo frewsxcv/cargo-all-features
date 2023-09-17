@@ -8,14 +8,6 @@ repository = "https://github.com/frewsxcv/cargo-all-features"
 license = "MIT/Apache-2.0"
 readme = "./README.md"
 
-[[bin]]
-name = "cargo-build-all-features"
-path = "src/bin/cargo-build-all-features.rs"
-
-[[bin]]
-name = "cargo-test-all-features"
-path = "src/bin/cargo-test-all-features.rs"
-
 [dependencies]
 json = "0.12"
 itertools = "0.10"

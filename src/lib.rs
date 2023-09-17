@@ -9,9 +9,23 @@ mod types;
 #[derive(Parser, Clone)]
 #[command(author, version, about = "See https://crates.io/crates/cargo-all-features", long_about = None)]
 #[command(bin_name = "cargo")]
+/// The cargo wrapper so that `cargo all-features ...` will work
+enum CargoCli {
+    #[command(name = "all-features")]
+    Subcommand {
+        /// The cargo subcommand to execute
+        subcommand: String,
+        #[command(flatten)]
+        cli: Cli,
+    },
+}
+
+#[derive(Parser, Clone)]
+#[command(author, version, about = "See https://crates.io/crates/cargo-all-features", long_about = None)]
+#[command(bin_name = "cargo")]
 /// The cargo wrapper so that `cargo check-all-features ...` will work, since it internally invokes `check-all-features` with itself
 /// as the first argument
-enum CargoCli {
+enum OldCargoCli {
     #[command(name = "check-all-features")]
     #[command(alias = "build-all-features")]
     #[command(alias = "test-all-features")]
@@ -37,15 +51,28 @@ struct Cli {
     chunk: usize,
 
     #[arg(
-        help = "arguments to pass down to cargo",
+        long,
+        default_value_t = false,
+        help = "Whether to put feature selection flags after CARGO_ARGS (instead of before) when invoking cargo"
+    )]
+    feature_flags_last: bool,
+
+    #[arg(
+        help = "Arguments to pass down to cargo",
         allow_hyphen_values = true,
         trailing_var_arg = true
     )]
     cargo_args: Vec<String>,
 }
 
-pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error::Error>> {
-    let CargoCli::Subcommand(cli) = CargoCli::parse();
+pub fn run(cargo_command: Option<test_runner::CargoCommand>) -> Result<(), Box<dyn error::Error>> {
+    let (subcommand, cli) = if let Some(cargo_command) = cargo_command {
+        let OldCargoCli::Subcommand(cli) = OldCargoCli::parse();
+        (cargo_command.get_name().to_string(), cli)
+    } else {
+        let CargoCli::Subcommand { subcommand, cli } = CargoCli::parse();
+        (subcommand, cli)
+    };
     let mut cmd = Command::new("cargo-all-features");
     if cli.chunk > cli.n_chunks || cli.chunk < 1 {
         cmd.error(
@@ -89,7 +116,7 @@ pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error
     }
 
     for package in chunk {
-        let outcome = test_all_features_for_package(package, cargo_command, &cli.cargo_args)?;
+        let outcome = test_all_features_for_package(package, &subcommand, cli.feature_flags_last, &cli.cargo_args)?;
 
         if let TestOutcome::Fail(exit_status) = outcome {
             process::exit(exit_status.code().unwrap());
@@ -101,7 +128,8 @@ pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error
 
 fn test_all_features_for_package(
     package: &cargo_metadata::Package,
-    command: crate::test_runner::CargoCommand,
+    command: &str,
+    feature_flags_last: bool,
     cargo_args: &[String],
 ) -> Result<TestOutcome, Box<dyn error::Error>> {
     let feature_sets = crate::features_finder::fetch_feature_sets(package);
@@ -110,6 +138,7 @@ fn test_all_features_for_package(
         let mut test_runner = crate::test_runner::TestRunner::new(
             command,
             package.name.clone(),
+            feature_flags_last,
             feature_set.clone(),
             cargo_args,
             package
