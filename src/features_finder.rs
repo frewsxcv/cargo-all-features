@@ -73,6 +73,10 @@ pub fn fetch_feature_sets(package: &crate::cargo_metadata::Package) -> Vec<Featu
     let max_combination_size = package.max_combination_size.unwrap_or(features.len());
     for n in 0..=max_combination_size {
         'outer: for feature_set in features.iter().combinations(n) {
+            let feature_set: Vec<_> = feature_set
+                .into_iter()
+                .chain(package.always_include_features.iter())
+                .collect();
             'inner: for skip_feature_set in &package.skip_feature_sets {
                 for feature in skip_feature_set.iter() {
                     if !feature_set.contains(&feature) {
@@ -83,13 +87,7 @@ pub fn fetch_feature_sets(package: &crate::cargo_metadata::Package) -> Vec<Featu
                 // skip_feature_set matches: do not add it to feature_sets
                 continue 'outer;
             }
-            feature_sets.push(
-                feature_set
-                    .into_iter()
-                    .chain(package.always_include_features.iter())
-                    .cloned()
-                    .collect(),
-            );
+            feature_sets.push(feature_set.into_iter().cloned().collect());
         }
     }
 
