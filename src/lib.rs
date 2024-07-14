@@ -12,9 +12,7 @@ mod types;
 /// The cargo wrapper so that `cargo check-all-features ...` will work, since it internally invokes `check-all-features` with itself
 /// as the first argument
 enum CargoCli {
-    #[command(name = "check-all-features")]
-    #[command(alias = "build-all-features")]
-    #[command(alias = "test-all-features")]
+    #[command(name = "all-features")]
     Subcommand(Cli),
 }
 
@@ -37,6 +35,13 @@ struct Cli {
     chunk: usize,
 
     #[arg(
+        help = "cargo command to execute; e.g. test, check, build, clippy and ...",
+        allow_hyphen_values = true,
+        trailing_var_arg = true
+    )]
+    cargo_command: String,
+
+    #[arg(
         help = "arguments to pass down to cargo",
         allow_hyphen_values = true,
         trailing_var_arg = true
@@ -44,8 +49,9 @@ struct Cli {
     cargo_args: Vec<String>,
 }
 
-pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error::Error>> {
+pub fn run() -> Result<(), Box<dyn error::Error>> {
     let CargoCli::Subcommand(cli) = CargoCli::parse();
+
     let mut cmd = Command::new("cargo-all-features");
     if cli.chunk > cli.n_chunks || cli.chunk < 1 {
         cmd.error(
@@ -89,7 +95,8 @@ pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error
     }
 
     for package in chunk {
-        let outcome = test_all_features_for_package(package, cargo_command, &cli.cargo_args)?;
+        let outcome =
+            test_all_features_for_package(package, cli.cargo_command.clone(), &cli.cargo_args)?;
 
         if let TestOutcome::Fail(exit_status) = outcome {
             process::exit(exit_status.code().unwrap());
@@ -101,14 +108,14 @@ pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error
 
 fn test_all_features_for_package(
     package: &cargo_metadata::Package,
-    command: crate::test_runner::CargoCommand,
+    command: String,
     cargo_args: &[String],
 ) -> Result<TestOutcome, Box<dyn error::Error>> {
     let feature_sets = crate::features_finder::fetch_feature_sets(package);
 
     for feature_set in feature_sets {
         let mut test_runner = crate::test_runner::TestRunner::new(
-            command,
+            command.clone(),
             package.name.clone(),
             feature_set.clone(),
             cargo_args,

@@ -59,8 +59,8 @@ pub fn fetch_feature_sets(package: &crate::cargo_metadata::Package) -> Vec<Featu
             package
                 .extra_features
                 .iter()
-                .cloned()
-                .filter(filter_denylist_and_alwayses),
+                .filter(|&x| filter_denylist_and_alwayses(x))
+                .cloned(),
         );
     } else {
         // allowlist cannot be mixed with denylist or any of the other above options,

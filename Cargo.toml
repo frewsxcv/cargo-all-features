@@ -9,18 +9,14 @@ license = "MIT/Apache-2.0"
 readme = "./README.md"
 
 [[bin]]
-name = "cargo-build-all-features"
-path = "src/bin/cargo-build-all-features.rs"
-
-[[bin]]
-name = "cargo-test-all-features"
-path = "src/bin/cargo-test-all-features.rs"
+name = "cargo-all-features"
+path = "src/bin/cargo-all-features.rs"
 
 [dependencies]
 json = "0.12"
-itertools = "0.10"
+itertools = "0.13"
 termcolor = "1"
-clap = { version = "4.3.19", features = ["derive"] }
+clap = { version = "4.5.9", features = ["derive"] }
 
 [dev-dependencies]
 assert_cmd = "2.0.11"
