@@ -11,6 +11,14 @@ pub struct TestRunner {
     cargo_command: String,
 }
 
+fn split_slice<'a>(slice: &'a [String], item: &'a str) -> (&'a [String], &'a [String]) {
+    if let Some(pos) = slice.iter().position(|s| s == item) {
+        (&slice[..pos], &slice[pos..])
+    } else {
+        (slice, &[])
+    }
+}
+
 impl TestRunner {
     pub fn new(
         cargo_command: String,
@@ -22,8 +30,11 @@ impl TestRunner {
         let mut command = process::Command::new(crate::cargo_cmd());
 
         command.arg(cargo_command.clone());
+
+        let (cargo_args_b, cargo_args_a) = split_slice(cargo_args, "--");
+
         // Pass through cargo args
-        for arg in cargo_args {
+        for arg in cargo_args_b {
             command.arg(arg);
         }
 
@@ -38,6 +49,10 @@ impl TestRunner {
 
             command.arg("--features");
             command.arg(&features);
+        }
+
+        for arg in cargo_args_a {
+            command.arg(arg);
         }
 
         TestRunner {
