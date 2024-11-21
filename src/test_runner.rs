@@ -22,6 +22,12 @@ impl TestRunner {
         let mut command = process::Command::new(&crate::cargo_cmd());
 
         command.arg(cargo_command.get_name());
+
+        // Pass through cargo args
+        for arg in cargo_args {
+            command.arg(arg);
+        }
+
         command.arg("--no-default-features");
 
         let mut features = feature_set
@@ -33,11 +39,6 @@ impl TestRunner {
 
             command.arg("--features");
             command.arg(&features);
-        }
-
-        // Pass through cargo args
-        for arg in cargo_args {
-            command.arg(arg);
         }
 
         TestRunner {
@@ -62,6 +63,7 @@ impl TestRunner {
             CargoCommand::Build => print!("    Building "),
             CargoCommand::Check => print!("    Checking "),
             CargoCommand::Test => print!("     Testing "),
+            CargoCommand::Nextest => print!("  Testing using Nextest"),
         }
         stdout.reset().unwrap();
         println!("crate={} features=[{}]", self.crate_name, self.features);
@@ -86,6 +88,7 @@ pub enum CargoCommand {
     Build,
     Check,
     Test,
+    Nextest,
 }
 
 impl CargoCommand {
@@ -94,6 +97,7 @@ impl CargoCommand {
             CargoCommand::Build => "build",
             CargoCommand::Check => "check",
             CargoCommand::Test => "test",
+            CargoCommand::Nextest => "nextest",
         }
     }
     pub fn get_cli_name(self) -> &'static str {
@@ -101,6 +105,7 @@ impl CargoCommand {
             CargoCommand::Build => "build-all-features",
             CargoCommand::Check => "check-all-features",
             CargoCommand::Test => "test-all-features",
+            CargoCommand::Nextest => "nextest-all-features",
         }
     }
 }

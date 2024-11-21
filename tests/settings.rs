@@ -328,9 +328,31 @@ fn test_settings(
     valid_feature_sets: Vec<Vec<&str>>,
     expected_error: Option<&str>,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    test_settings_ex("cargo-test-all-features", vec!["test-all-features"], settings, valid_feature_sets.clone(), expected_error)?;
+    test_settings_ex("cargo-nextest-all-features", vec!["nextest-all-features", "run"], settings, valid_feature_sets.clone(), expected_error)?;
+
+    Ok(())
+}
+
+/*
+Test the given settings for cargo-all-features.
+If an error message is provided, expect cargo test-all-features to fail with this message.
+Otherwise expect the normalized set of feature sets to be the same as the given ground truth input.
+*/
+fn test_settings_ex (
+    test_binary: &str,
+    initial_args: Vec<&str>,
+    settings: &str,
+    valid_feature_sets: Vec<Vec<&str>>,
+    expected_error: Option<&str>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let temp = dummy_crate_setup(settings)?;
-    let mut cmd = Command::cargo_bin("cargo-test-all-features")?;
-    cmd.arg("test-all-features");
+    let mut cmd = Command::cargo_bin(test_binary)?;
+
+    for arg in initial_args {
+        cmd.arg(arg);
+    }
+
     cmd.current_dir(temp.path());
 
     // add flags for producing also a coverage report, see ci/test_and_coverage.bash

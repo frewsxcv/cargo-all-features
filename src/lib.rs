@@ -15,6 +15,7 @@ enum CargoCli {
     #[command(name = "check-all-features")]
     #[command(alias = "build-all-features")]
     #[command(alias = "test-all-features")]
+    #[command(alias = "nextest-all-features")]
     Subcommand(Cli),
 }
 

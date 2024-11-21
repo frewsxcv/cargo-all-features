@@ -32,6 +32,11 @@ Test crate with all feature flag combinations:
 cargo test-all-features <CARGO TEST FLAGS>
 ```
 
+Test crate with all feature flag combinations using the nextest:
+
+```
+cargo nextest-all-features <NEXTEST OPTIONS> <CARGO TEST FLAGS>
+```
 
 ## Why?
 
