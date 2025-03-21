@@ -38,8 +38,15 @@ impl TestRunner {
             command.arg(arg);
         }
 
+        // Pass through cargo args
+        // Example: `cargo all-features clippy --no-deps -- --package xyz`
+        // We take `clippy` and `--no-deps` for now
+        command.args(cargo_args_b.iter());
+
+        // We add `--no-default-features`
         command.arg("--no-default-features");
 
+        // We add feature set `--features [any combination]`
         let mut features = feature_set
             .iter()
             .fold(String::new(), |s, feature| s + feature + ",");
@@ -51,10 +58,10 @@ impl TestRunner {
             command.arg(&features);
         }
 
-        for arg in cargo_args_a {
-            command.arg(arg);
-        }
+        // And last we pass `--` and `--package xyz` to command args
+        command.args(cargo_args_a.iter());
 
+        // We successfully constructed `cargo clippy --no-deps --no-default-features --features [any combination] -- --package xyz`
         TestRunner {
             crate_name,
             command,
