@@ -34,11 +34,6 @@ struct Cli {
     )]
     chunk: usize,
 
-    #[arg(
-        help = "cargo command to execute; e.g. test, check, build, clippy and ...",
-        allow_hyphen_values = true,
-        trailing_var_arg = true
-    )]
     cargo_command: String,
 
     #[arg(
