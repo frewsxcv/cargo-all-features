@@ -33,9 +33,6 @@ impl TestRunner {
 
         let (cargo_args_b, cargo_args_a) = split_slice(cargo_args, "--");
 
-        // Pass through cargo args
-        for arg in cargo_args_b {
-            command.arg(arg);
         }
 
         // Pass through cargo args
