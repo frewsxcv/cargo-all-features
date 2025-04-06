@@ -33,8 +33,6 @@ impl TestRunner {
 
         let (cargo_args_b, cargo_args_a) = split_slice(cargo_args, "--");
 
-        }
-
         // Pass through cargo args
         // Example: `cargo all-features clippy --no-deps -- --package xyz`
         // We take `clippy` and `--no-deps` for now
