@@ -276,7 +276,7 @@ denoting the crate and activated features, e.g. Testing crate=testdummy features
 This function expects such a output and filters all the feature sets which were discovered in the output.
 */
 fn get_tested_feature_sets_from_output(stdout: &str) -> Vec<Vec<&str>> {
-    let re = Regex::new(r"(?m)^.*Testing.*crate=testdummy features=\[(.*)\]$").unwrap();
+    let re = Regex::new(r"(?m)^.*Running.*test.*crate=testdummy features=\[(.*)\]$").unwrap();
 
     let mut ans = vec![];
     for (_, [comma_sep_features]) in re.captures_iter(stdout).map(|c| c.extract()) {
@@ -329,8 +329,8 @@ fn test_settings(
     expected_error: Option<&str>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let temp = dummy_crate_setup(settings)?;
-    let mut cmd = Command::cargo_bin("cargo-test-all-features")?;
-    cmd.arg("test-all-features");
+    let mut cmd = Command::cargo_bin("cargo-all-features")?;
+    cmd.args(["all-features", "test"]);
     cmd.current_dir(temp.path());
 
     // add flags for producing also a coverage report, see ci/test_and_coverage.bash
