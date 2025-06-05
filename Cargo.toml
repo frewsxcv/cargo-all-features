@@ -12,15 +12,28 @@ readme = "./README.md"
 name = "cargo-all-features"
 path = "src/bin/cargo-all-features.rs"
 
+[[bin]]
+name = "cargo-build-all-features"
+path = "src/bin/cargo-build-all-features.rs"
+
+[[bin]]
+name = "cargo-test-all-features"
+path = "src/bin/cargo-test-all-features.rs"
+
+[[bin]]
+name = "cargo-check-all-features"
+path = "src/bin/cargo-check-all-features.rs"
+
 [dependencies]
 json = "0.12"
 itertools = "0.14"
 termcolor = "1"
-clap = { version = "4.5.32", features = ["derive"] }
+clap = { version = "4.5.39", features = ["derive"] }
+clap-cargo = "0.15.2"
 rayon = "1.10"
 
 [dev-dependencies]
-assert_cmd = "2.0.16"
+assert_cmd = "2.0.17"
 predicates = "3.1.3"
-assert_fs = "1.1.2"
+assert_fs = "1.1.3"
 regex = "1.11.1"
