@@ -12,14 +12,17 @@ readme = "./README.md"
 name = "cargo-all-features"
 path = "src/bin/cargo-all-features.rs"
 
+# Backward compatiblity
 [[bin]]
 name = "cargo-build-all-features"
 path = "src/bin/cargo-build-all-features.rs"
 
+# Backward compatiblity
 [[bin]]
 name = "cargo-test-all-features"
 path = "src/bin/cargo-test-all-features.rs"
 
+# Backward compatiblity
 [[bin]]
 name = "cargo-check-all-features"
 path = "src/bin/cargo-check-all-features.rs"
