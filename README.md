@@ -12,26 +12,31 @@ cargo install cargo-all-features
 
 ## Usage
 
-The following commands can be run within a Cargo package or at the root of a Cargo workspace.
+Run cargo subcommands on a Cargo package or at the root of a Cargo workspace with all feature flag combinations:
+
+```
+cargo all-features <SUBCOMMAND> <CARGO SUBCOMMAND FLAGS>
+```
+
+### Example
 
 Build crate with all feature flag combinations:
 
 ```
-cargo build-all-features <CARGO BUILD FLAGS>
+cargo all-features build <CARGO BUILD FLAGS>
 ```
 
 Check crate with all feature flag combinations:
 
 ```
-cargo check-all-features <CARGO CHECK FLAGS>
+cargo all-features check <CARGO CHECK FLAGS>
 ```
 
 Test crate with all feature flag combinations:
 
 ```
-cargo test-all-features <CARGO TEST FLAGS>
+cargo all-features test <CARGO TEST FLAGS>
 ```
-
 
 ## Why?
 
@@ -81,8 +86,8 @@ The project also supports chunking: `--n-chunks 3 --chunks 1` will split the cra
 
 Licensed under either of
 
- * Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
- * MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
 
 at your option.
 
