@@ -8,22 +8,40 @@ pub struct TestRunner {
     /// A comma separated list of features
     features: String,
     working_dir: path::PathBuf,
-    cargo_command: CargoCommand,
+    cargo_command: String,
+}
+
+fn split_slice<'a>(slice: &'a [String], item: &'a str) -> (&'a [String], &'a [String]) {
+    if let Some(pos) = slice.iter().position(|s| s == item) {
+        (&slice[..pos], &slice[pos..])
+    } else {
+        (slice, &[])
+    }
 }
 
 impl TestRunner {
     pub fn new(
-        cargo_command: CargoCommand,
+        cargo_command: String,
         crate_name: String,
         feature_set: FeatureList,
         cargo_args: &[String],
         working_dir: path::PathBuf,
     ) -> Self {
-        let mut command = process::Command::new(&crate::cargo_cmd());
+        let mut command = process::Command::new(crate::cargo_cmd());
 
-        command.arg(cargo_command.get_name());
+        command.arg(cargo_command.clone());
+
+        let (cargo_args_b, cargo_args_a) = split_slice(cargo_args, "--");
+
+        // Pass through cargo args
+        // Example: `cargo all-features clippy --no-deps -- --package xyz`
+        // We take `clippy` and `--no-deps` for now
+        command.args(cargo_args_b.iter());
+
+        // We add `--no-default-features`
         command.arg("--no-default-features");
 
+        // We add feature set `--features [any combination]`
         let mut features = feature_set
             .iter()
             .fold(String::new(), |s, feature| s + feature + ",");
@@ -35,11 +53,10 @@ impl TestRunner {
             command.arg(&features);
         }
 
-        // Pass through cargo args
-        for arg in cargo_args {
-            command.arg(arg);
-        }
+        // And last we pass `--` and `--package xyz` to command args
+        command.args(cargo_args_a.iter());
 
+        // We successfully constructed `cargo clippy --no-deps --no-default-features --features [any combination] -- --package xyz`
         TestRunner {
             crate_name,
             command,
@@ -58,11 +75,7 @@ impl TestRunner {
                     .set_bold(true),
             )
             .unwrap();
-        match self.cargo_command {
-            CargoCommand::Build => print!("    Building "),
-            CargoCommand::Check => print!("    Checking "),
-            CargoCommand::Test => print!("     Testing "),
-        }
+        print!("     Running {} ", self.cargo_command);
         stdout.reset().unwrap();
         println!("crate={} features=[{}]", self.crate_name, self.features);
 
@@ -78,29 +91,5 @@ impl TestRunner {
         } else {
             crate::TestOutcome::Fail(output.status)
         })
-    }
-}
-
-#[derive(Copy, Clone)]
-pub enum CargoCommand {
-    Build,
-    Check,
-    Test,
-}
-
-impl CargoCommand {
-    pub fn get_name(self) -> &'static str {
-        match self {
-            CargoCommand::Build => "build",
-            CargoCommand::Check => "check",
-            CargoCommand::Test => "test",
-        }
-    }
-    pub fn get_cli_name(self) -> &'static str {
-        match self {
-            CargoCommand::Build => "build-all-features",
-            CargoCommand::Check => "check-all-features",
-            CargoCommand::Test => "test-all-features",
-        }
     }
 }

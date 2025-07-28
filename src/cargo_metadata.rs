@@ -130,32 +130,27 @@ impl TryFrom<json::JsonValue> for Package {
         if !allowlist.is_empty() {
             if !always_include_features.is_empty() {
                 return Err(format!(
-                    "Package {} has both `allowlist` and `always_include_features` keys",
-                    name
+                    "Package {name} has both `allowlist` and `always_include_features` keys"
                 ));
             }
             if !denylist.is_empty() {
                 return Err(format!(
-                    "Package {} has both `allowlist` and `denylist` keys",
-                    name
+                    "Package {name} has both `allowlist` and `denylist` keys"
                 ));
             }
             if !extra_features.is_empty() {
                 return Err(format!(
-                    "Package {} has both `allowlist` and `extra_features` keys",
-                    name
+                    "Package {name} has both `allowlist` and `extra_features` keys"
                 ));
             }
             if maybe_skip_optional.is_some() {
                 return Err(format!(
-                    "Package {} has both `allowlist` and `skip_optional_dependencies` keys",
-                    name
+                    "Package {name} has both `allowlist` and `skip_optional_dependencies` keys"
                 ));
             }
             if max_combination_size.is_some() {
                 return Err(format!(
-                    "Package {} has both `allowlist` and `max_combination_size` keys",
-                    name
+                    "Package {name} has both `allowlist` and `max_combination_size` keys"
                 ));
             }
         }

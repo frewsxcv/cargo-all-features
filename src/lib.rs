@@ -9,12 +9,15 @@ mod types;
 #[derive(Parser, Clone)]
 #[command(author, version, about = "See https://crates.io/crates/cargo-all-features", long_about = None)]
 #[command(bin_name = "cargo")]
+#[command(styles = CLAP_STYLING)]
 /// The cargo wrapper so that `cargo check-all-features ...` will work, since it internally invokes `check-all-features` with itself
 /// as the first argument
 enum CargoCli {
-    #[command(name = "check-all-features")]
-    #[command(alias = "build-all-features")]
+    #[command(name = "all-features")]
+    // Backward compatibility
+    #[command(alias = "check-all-features")]
     #[command(alias = "test-all-features")]
+    #[command(alias = "build-all-features")]
     Subcommand(Cli),
 }
 
@@ -36,6 +39,9 @@ struct Cli {
     )]
     chunk: usize,
 
+    // Backward compatibility: keep the field optional
+    cargo_command: Option<String>,
+
     #[arg(
         help = "arguments to pass down to cargo",
         allow_hyphen_values = true,
@@ -44,9 +50,45 @@ struct Cli {
     cargo_args: Vec<String>,
 }
 
-pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error::Error>> {
-    let CargoCli::Subcommand(cli) = CargoCli::parse();
+pub const CLAP_STYLING: clap::builder::styling::Styles = clap::builder::styling::Styles::styled()
+    .header(clap_cargo::style::HEADER)
+    .usage(clap_cargo::style::USAGE)
+    .literal(clap_cargo::style::LITERAL)
+    .placeholder(clap_cargo::style::PLACEHOLDER)
+    .error(clap_cargo::style::ERROR)
+    .valid(clap_cargo::style::VALID)
+    .invalid(clap_cargo::style::INVALID);
+
+pub fn run() -> Result<(), Box<dyn error::Error>> {
+    let CargoCli::Subcommand(mut cli) = CargoCli::parse();
+
     let mut cmd = Command::new("cargo-all-features");
+
+    // Backward compatibility.
+    // Safety: Cargo always passes the command as second argument.
+    let cargo_command = std::env::args().nth(1).unwrap();
+
+    // Backward compatibility.
+    // Check if older commands is used, use cli.cargo_command as an argument, and extract the
+    // command.
+    // Otherwise, a command should be provided for `cargo all-features <command>`
+    let cargo_command = if let Some(cargo_command) = cargo_command.strip_suffix("-all-features") {
+        if let Some(arg) = cli.cargo_command {
+            cli.cargo_args.insert(0, arg);
+        }
+        cargo_command.into()
+    } else {
+        if cli.cargo_command.is_none() {
+            cmd.error(
+                ErrorKind::InvalidValue,
+                "A cargo command is needed, e.g. check, test, build, clippy and ...",
+            )
+            .print()?;
+            process::exit(1);
+        }
+        cli.cargo_command.unwrap()
+    };
+
     if cli.chunk > cli.n_chunks || cli.chunk < 1 {
         cmd.error(
             ErrorKind::InvalidValue,
@@ -89,7 +131,8 @@ pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error
     }
 
     for package in chunk {
-        let outcome = test_all_features_for_package(package, cargo_command, &cli.cargo_args)?;
+        let outcome =
+            test_all_features_for_package(package, cargo_command.clone(), &cli.cargo_args)?;
 
         if let TestOutcome::Fail(exit_status) = outcome {
             process::exit(exit_status.code().unwrap());
@@ -101,14 +144,14 @@ pub fn run(cargo_command: test_runner::CargoCommand) -> Result<(), Box<dyn error
 
 fn test_all_features_for_package(
     package: &cargo_metadata::Package,
-    command: crate::test_runner::CargoCommand,
+    command: String,
     cargo_args: &[String],
 ) -> Result<TestOutcome, Box<dyn error::Error>> {
     let feature_sets = crate::features_finder::fetch_feature_sets(package);
 
     for feature_set in feature_sets {
         let mut test_runner = crate::test_runner::TestRunner::new(
-            command,
+            command.clone(),
             package.name.clone(),
             feature_set.clone(),
             cargo_args,
