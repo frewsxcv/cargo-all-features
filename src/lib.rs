@@ -183,6 +183,7 @@ fn determine_packages_to_test() -> Result<Vec<cargo_metadata::Package>, Box<dyn 
             .packages
             .iter()
             .filter(|package| metadata.workspace_members.contains(&package.id))
+            .filter(|package| !package.skip_package)
             .cloned()
             .collect::<Vec<cargo_metadata::Package>>()
     } else {
