@@ -24,7 +24,7 @@ jobs:
           args: -- -D warnings
       - name: cache cargo binaries
         id: cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: "/usr/share/rust/.cargo"
           key: ${{ runner.os }}-cargo-bins-${{ env.GITHUB_SHA }}
