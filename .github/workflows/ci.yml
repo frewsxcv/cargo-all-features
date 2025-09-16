@@ -34,8 +34,9 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: install
-          args: cargo-all-features
+          args: --path .
       - name: Run Tests
         uses: actions-rs/cargo@v1
         with:
-          command: cargo all-features test
+          command: all-features
+          args: test
