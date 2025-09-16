@@ -52,6 +52,7 @@ pub struct Package {
     pub dependencies: Vec<Dependency>,
     pub features: FeatureList,
     pub feature_map: HashMap<String, FeatureList>,
+    pub skip_package: bool,
     pub skip_feature_sets: Vec<FeatureList>,
     pub skip_optional_dependencies: bool,
     pub allowlist: FeatureList,
@@ -127,6 +128,10 @@ impl TryFrom<json::JsonValue> for Package {
         let max_combination_size =
             json_value["metadata"]["cargo-all-features"]["max_combination_size"].as_usize();
 
+        let skip_package = json_value["metadata"]["cargo-all-features"]["skip_package"]
+            .as_bool()
+            .unwrap_or(false);
+
         if !allowlist.is_empty() {
             if !always_include_features.is_empty() {
                 return Err(format!(
@@ -184,6 +189,7 @@ impl TryFrom<json::JsonValue> for Package {
             dependencies,
             features,
             feature_map,
+            skip_package,
             skip_feature_sets,
             skip_optional_dependencies,
             extra_features,

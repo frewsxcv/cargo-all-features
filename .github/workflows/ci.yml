@@ -24,7 +24,7 @@ jobs:
           args: -- -D warnings
       - name: cache cargo binaries
         id: cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: "/usr/share/rust/.cargo"
           key: ${{ runner.os }}-cargo-bins-${{ env.GITHUB_SHA }}
@@ -34,8 +34,9 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: install
-          args: cargo-all-features
+          args: --path .
       - name: Run Tests
         uses: actions-rs/cargo@v1
         with:
-          command: cargo all-features test
+          command: all-features
+          args: test

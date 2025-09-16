@@ -78,6 +78,9 @@ max_combination_size = 4
 # Only include certain features in the build matrix
 #(incompatible with `denylist`, `skip_optional_dependencies`, and `extra_features`)
 allowlist = ["foo", "bar"]
+
+# Disable the entire package from being tested (useful in a workspace)
+# skip_package = true
 ```
 
 The project also supports chunking: `--n-chunks 3 --chunks 1` will split the crates being tested into three sets (alphabetically, currently), and run the requested command for the first set of crates only. This is useful for splitting up CI jobs or performing disk cleanups since for large workspaces `check-all-features` and friends can take a very long time and produce a ton of artifacts.
