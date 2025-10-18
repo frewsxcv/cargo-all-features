@@ -31,6 +31,7 @@ struct Cli {
         help = "Split the workspace into n chunks, each chunk containing a roughly equal number of crates"
     )]
     n_chunks: usize,
+
     #[arg(
         long,
         default_value_t = 1,
@@ -38,6 +39,12 @@ struct Cli {
         help = "Which chunk to test, indexed at 1"
     )]
     chunk: usize,
+
+    #[arg(
+        long,
+        help = "Features to exclude from the matrix. Overrides options in Cargo.toml."
+    )]
+    exclude: Vec<String>,
 
     // Backward compatibility: keep the field optional
     cargo_command: Option<String>,
@@ -73,8 +80,8 @@ pub fn run() -> Result<(), Box<dyn error::Error>> {
     // command.
     // Otherwise, a command should be provided for `cargo all-features <command>`
     let cargo_command = if let Some(cargo_command) = cargo_command.strip_suffix("-all-features") {
-        if let Some(arg) = cli.cargo_command {
-            cli.cargo_args.insert(0, arg);
+        if let Some(arg) = cli.cargo_command.as_ref() {
+            cli.cargo_args.insert(0, arg.clone());
         }
         cargo_command.into()
     } else {
@@ -86,7 +93,7 @@ pub fn run() -> Result<(), Box<dyn error::Error>> {
             .print()?;
             process::exit(1);
         }
-        cli.cargo_command.unwrap()
+        cli.cargo_command.clone().unwrap()
     };
 
     if cli.chunk > cli.n_chunks || cli.chunk < 1 {
@@ -131,8 +138,7 @@ pub fn run() -> Result<(), Box<dyn error::Error>> {
     }
 
     for package in chunk {
-        let outcome =
-            test_all_features_for_package(package, cargo_command.clone(), &cli.cargo_args)?;
+        let outcome = test_all_features_for_package(package, cargo_command.clone(), &cli)?;
 
         if let TestOutcome::Fail(exit_status) = outcome {
             process::exit(exit_status.code().unwrap());
@@ -145,16 +151,16 @@ pub fn run() -> Result<(), Box<dyn error::Error>> {
 fn test_all_features_for_package(
     package: &cargo_metadata::Package,
     command: String,
-    cargo_args: &[String],
+    cli: &Cli,
 ) -> Result<TestOutcome, Box<dyn error::Error>> {
-    let feature_sets = crate::features_finder::fetch_feature_sets(package);
+    let feature_sets = crate::features_finder::fetch_feature_sets(package, &cli.exclude);
 
     for feature_set in feature_sets {
         let mut test_runner = crate::test_runner::TestRunner::new(
             command.clone(),
             package.name.clone(),
             feature_set.clone(),
-            cargo_args,
+            &cli.cargo_args,
             package
                 .manifest_path
                 .parent()
