@@ -5,10 +5,14 @@ use crate::{
 use itertools::Itertools;
 use std::collections::HashSet;
 
-pub fn fetch_feature_sets(package: &crate::cargo_metadata::Package) -> Vec<FeatureList> {
+pub fn fetch_feature_sets(
+    package: &crate::cargo_metadata::Package,
+    exclude: &[String],
+) -> Vec<FeatureList> {
     let mut features = FeatureList::default();
 
     let mut denylist_and_alwayses = package.denylist.clone();
+    denylist_and_alwayses.extend(exclude.iter().map(|x| Feature(x.clone())));
     denylist_and_alwayses.extend(package.always_include_features.iter().cloned());
 
     let filter_denylist_and_alwayses = |f: &Feature| !denylist_and_alwayses.contains(f);
