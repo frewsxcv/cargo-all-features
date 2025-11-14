@@ -1,4 +1,4 @@
-use clap::{error::ErrorKind, Command, Parser};
+use clap::{error::ErrorKind, Command, Parser, ValueEnum};
 use std::{env, error, ffi, process};
 
 pub mod cargo_metadata;
@@ -43,11 +43,31 @@ struct Cli {
     cargo_command: Option<String>,
 
     #[arg(
+        long,
+        value_enum,
+        default_value_t = ChunkGranularity::Package,
+        help = "Chunk granularity: `package` to chunk by crate, `feature` to chunk by (crate, feature-set) tuples"
+    )]
+    chunk_granularity: ChunkGranularity,
+
+    #[arg(
         help = "arguments to pass down to cargo",
         allow_hyphen_values = true,
         trailing_var_arg = true
     )]
     cargo_args: Vec<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, ValueEnum)]
+enum ChunkGranularity {
+    Package,
+    Feature,
+}
+
+#[derive(Clone, Debug)]
+enum WorkItem {
+    PackageOnly(cargo_metadata::Package),
+    PackageFeature(cargo_metadata::Package, types::FeatureList),
 }
 
 pub const CLAP_STYLING: clap::builder::styling::Styles = clap::builder::styling::Styles::styled()
@@ -106,40 +126,112 @@ pub fn run() -> Result<(), Box<dyn error::Error>> {
 
     let packages = determine_packages_to_test()?;
 
+    // Build the list of work items. If split_by_feature is set, expand each package into
+    // (package, feature-set) tuples. Otherwise operate on packages as a whole.
+    let work_items: Vec<WorkItem> = match &cli.chunk_granularity {
+        ChunkGranularity::Feature => packages
+            .into_iter()
+            .flat_map(|package| {
+                features_finder::fetch_feature_sets(&package)
+                    .into_iter()
+                    .map(|f| WorkItem::PackageFeature(package.clone(), f))
+                    .collect::<Vec<_>>()
+            })
+            .collect(),
+        ChunkGranularity::Package => packages.into_iter().map(WorkItem::PackageOnly).collect(),
+    };
+
     // chunks() takes a chunk size, not a number of chunks
     // we must adjust to deal with the fact that if things are not a perfect multiple,
     // len / n_chunks will end up with an uncounted remainder chunk
-    let mut chunk_size = packages.len() / cli.n_chunks;
-    if packages.len() % cli.n_chunks != 0 {
+    let mut chunk_size = work_items.len() / cli.n_chunks;
+    if !work_items.len().is_multiple_of(cli.n_chunks) {
         chunk_size += 1;
     }
 
     // - 1 since we are 1-indexing
-    let chunk = if let Some(chunk) = packages.chunks(chunk_size).nth(cli.chunk - 1) {
+    let chunk = if let Some(chunk) = work_items.chunks(chunk_size).nth(cli.chunk - 1) {
         chunk
     } else {
         println!("Chunk is empty (did you ask for more chunks than there are packages?");
         return Ok(());
     };
     if cli.n_chunks != 1 {
-        let packages: String = chunk.iter().flat_map(|p| [&p.name, ","]).collect();
-        let packages = packages.trim_end_matches(',');
-        println!(
-            "Running on chunk {} out of {} ({chunk_size} packages: {packages})",
-            cli.chunk, cli.n_chunks
+        print_chunk_info(
+            cli.chunk_granularity,
+            cli.chunk,
+            cli.n_chunks,
+            chunk_size,
+            chunk,
         );
     }
 
-    for package in chunk {
-        let outcome =
-            test_all_features_for_package(package, cargo_command.clone(), &cli.cargo_args)?;
-
+    for item in chunk {
+        let outcome = match item {
+            WorkItem::PackageOnly(package) => {
+                test_all_features_for_package(package, cargo_command.clone(), &cli.cargo_args)
+            }
+            WorkItem::PackageFeature(package, feature_set) => test_one_feature_for_package(
+                package,
+                feature_set,
+                cargo_command.clone(),
+                &cli.cargo_args,
+            ),
+        }?;
         if let TestOutcome::Fail(exit_status) = outcome {
             process::exit(exit_status.code().unwrap());
         }
     }
 
     Ok(())
+}
+
+fn print_chunk_info(
+    chunk_granularity: ChunkGranularity,
+    chunk_index: usize,
+    n_chunks: usize,
+    chunk_size: usize,
+    chunk: &[WorkItem],
+) {
+    let (chunk_size, packages) = match chunk_granularity {
+        ChunkGranularity::Feature => {
+            let packages: String = chunk
+                .iter()
+                .map(|w| match w {
+                    WorkItem::PackageFeature(package, feature_set) => {
+                        let feature_list = if feature_set.is_empty() {
+                            "<none>".to_string()
+                        } else {
+                            feature_set
+                                .iter()
+                                .map(|f| f.as_ref().to_string())
+                                .collect::<Vec<_>>()
+                                .join("+")
+                        };
+                        format!("{} [{}]", package.name, feature_list)
+                    }
+                    _ => unreachable!(),
+                })
+                .collect::<Vec<_>>()
+                .join(", ");
+            (chunk.len(), packages)
+        }
+        ChunkGranularity::Package => {
+            let packages: String = chunk
+                .iter()
+                .map(|w| match w {
+                    WorkItem::PackageOnly(p) | WorkItem::PackageFeature(p, _) => p.name.clone(),
+                })
+                .collect::<Vec<_>>()
+                .join(",");
+            (chunk_size, packages)
+        }
+    };
+
+    println!(
+        "Running on chunk {} out of {} ({chunk_size} packages: {packages})",
+        chunk_index, n_chunks
+    );
 }
 
 fn test_all_features_for_package(
@@ -150,19 +242,8 @@ fn test_all_features_for_package(
     let feature_sets = crate::features_finder::fetch_feature_sets(package);
 
     for feature_set in feature_sets {
-        let mut test_runner = crate::test_runner::TestRunner::new(
-            command.clone(),
-            package.name.clone(),
-            feature_set.clone(),
-            cargo_args,
-            package
-                .manifest_path
-                .parent()
-                .expect("could not find parent of cargo manifest path")
-                .to_owned(),
-        );
-
-        let outcome = test_runner.run()?;
+        let outcome =
+            test_one_feature_for_package(package, &feature_set, command.clone(), cargo_args)?;
 
         match outcome {
             TestOutcome::Pass => (),
@@ -172,6 +253,27 @@ fn test_all_features_for_package(
     }
 
     Ok(TestOutcome::Pass)
+}
+
+fn test_one_feature_for_package(
+    package: &cargo_metadata::Package,
+    feature_set: &types::FeatureList,
+    command: String,
+    cargo_args: &[String],
+) -> Result<TestOutcome, Box<dyn error::Error>> {
+    let mut test_runner = crate::test_runner::TestRunner::new(
+        command.clone(),
+        package.name.clone(),
+        feature_set.clone(),
+        cargo_args,
+        package
+            .manifest_path
+            .parent()
+            .expect("could not find parent of cargo manifest path")
+            .to_owned(),
+    );
+
+    test_runner.run()
 }
 
 fn determine_packages_to_test() -> Result<Vec<cargo_metadata::Package>, Box<dyn error::Error>> {

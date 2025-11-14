@@ -23,7 +23,7 @@ fn fetch_cargo_metadata_json() -> Result<String, Box<dyn error::Error>> {
     Ok(String::from_utf8(output.stdout)?)
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Dependency {
     pub name: String,
     pub rename: Option<String>,
@@ -44,7 +44,7 @@ impl From<json::JsonValue> for Dependency {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Package {
     pub id: String,
     pub name: String,
