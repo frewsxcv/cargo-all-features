@@ -145,7 +145,8 @@ pub fn run() -> Result<(), Box<dyn error::Error>> {
     // we must adjust to deal with the fact that if things are not a perfect multiple,
     // len / n_chunks will end up with an uncounted remainder chunk
     let mut chunk_size = work_items.len() / cli.n_chunks;
-    if !work_items.len().is_multiple_of(cli.n_chunks) {
+    #[allow(clippy::manual_is_multiple_of)]
+    if work_items.len() % cli.n_chunks != 0 {
         chunk_size += 1;
     }
 
