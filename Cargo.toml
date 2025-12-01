@@ -3,6 +3,7 @@ name = "cargo-all-features"
 version = "1.12.0"
 authors = ["Corey Farwell <coreyf@rwell.org>"]
 edition = "2021"
+rust-version = "1.87"
 description = "A Cargo subcommand to build and test all feature flag combinations"
 repository = "https://github.com/frewsxcv/cargo-all-features"
 license = "MIT/Apache-2.0"
